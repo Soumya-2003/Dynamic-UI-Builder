@@ -1,0 +1,99 @@
+{
+  "_version": "1.86.0",
+  "sap.app": {
+    "id": "dynamicuibuilder",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:basic",
+      "version": "1.29.0",
+      "toolsId": "01f67d34-ce0b-4ead-b7e5-f953fc614c5a"
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": false,
+    "dependencies": {
+      "minUI5Version": "1.150.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.ui.layout": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "dynamicuibuilder.i18n.i18n"
+        }
+      }
+    },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+    "routing": {
+      "config": {
+        "routerClass": "sap.m.routing.Router",
+        "controlAggregation": "pages",
+        "controlId": "app",
+        "transition": "slide",
+        "type": "View",
+        "viewType": "XML",
+        "path": "dynamicuibuilder.view",
+        "async": true,
+        "viewPath": "dynamicuibuilder.view"
+      },
+      "routes": [
+        {
+          "name": "RouteBuilder",
+          "pattern": ":?query:",
+          "target": [
+            "TargetBuilder"
+          ]
+        }
+      ],
+      "targets": {
+        "TargetBuilder": {
+          "id": "Builder",
+          "name": "Builder"
+        }
+      }
+    },
+    "rootView": {
+      "viewName": "dynamicuibuilder.view.App",
+      "type": "XML",
+      "id": "App",
+      "async": true
+    }
+  }
+}

@@ -1,0 +1,370 @@
+<mvc:View
+    controllerName="dynamicuibuilder.controller.Builder"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:dnd="sap.ui.core.dnd"
+>
+    <Page
+        id="page"
+        title="Dynamic UI Builder"
+    >
+        <HBox
+            width="100%"
+            justifyContent="SpaceBetween"
+        >
+            <VBox
+                width="20%"
+                class="sapUiSmallMargin"
+            >
+                <Title text="Toolbox" />
+                <Panel
+                    expandable="true"
+                    expanded="true"
+                    headerText="Input Controls"
+                    width="auto"
+                    class="sapUiNoContentPadding"
+                >
+                    <List>
+                        <dragDropConfig>
+                            <dnd:DragInfo sourceAggregation="items" />
+                        </dragDropConfig>
+                        <StandardListItem
+                            title="Input"
+                            icon="sap-icon://edit"
+                        />
+                        <StandardListItem
+                            title="TextArea"
+                            icon="sap-icon://document-text"
+                        />
+                        <StandardListItem
+                            title="ComboBox"
+                            icon="sap-icon://drop-down-list"
+                        />
+                        <StandardListItem
+                            title="DatePicker"
+                            icon="sap-icon://calendar"
+                        />
+                        <StandardListItem
+                            title="TimePicker"
+                            icon="sap-icon://time-entry-request"
+                        />
+                        <StandardListItem
+                            title="DateTimePicker"
+                            icon="sap-icon://date-time"
+                        />
+                        <StandardListItem
+                            title="SearchField"
+                            icon="sap-icon://search"
+                        />
+                    </List>
+                </Panel>
+
+                <Panel
+                    expandable="true"
+                    expanded="false"
+                    headerText="Action Controls"
+                    width="auto"
+                    class="sapUiNoContentPadding"
+                >
+                    <List>
+                        <dragDropConfig>
+                            <dnd:DragInfo sourceAggregation="items" />
+                        </dragDropConfig>
+                        <StandardListItem
+                            title="Button"
+                            icon="sap-icon://touch"
+                        />
+                        <StandardListItem
+                            title="Menu Button"
+                            icon="sap-icon://menu"
+                        />
+                        <StandardListItem
+                            title="Segmented Button"
+                            icon="sap-icon://dimension"
+                        />
+                    </List>
+                </Panel>
+
+                <Panel
+                    expandable="true"
+                    expanded="false"
+                    headerText="Selection Controls"
+                    width="auto"
+                    class="sapUiNoContentPadding"
+                >
+                    <List>
+                        <dragDropConfig>
+                            <dnd:DragInfo sourceAggregation="items" />
+                        </dragDropConfig>
+                        <StandardListItem
+                            title="CheckBox"
+                            icon="sap-icon://accept"
+                        />
+                        <StandardListItem
+                            title="RadioButton"
+                            icon="sap-icon://target-group"
+                        />
+                        <StandardListItem
+                            title="Switch"
+                            icon="sap-icon://action"
+                        />
+                        <StandardListItem
+                            title="Select"
+                            icon="sap-icon://drop-down-list"
+                        />
+                        <StandardListItem
+                            title="MultiComboBox"
+                            icon="sap-icon://multi-select"
+                        />
+                    </List>
+                </Panel>
+
+                <Panel
+                    expandable="true"
+                    expanded="false"
+                    headerText="Display Controls"
+                    width="auto"
+                    class="sapUiNoContentPadding"
+                >
+                    <List>
+                        <dragDropConfig>
+                            <dnd:DragInfo sourceAggregation="items" />
+                        </dragDropConfig>
+                        <StandardListItem
+                            title="Label"
+                            icon="sap-icon://tag"
+                        />
+                        <StandardListItem
+                            title="Text"
+                            icon="sap-icon://letter"
+                        />
+                        <StandardListItem
+                            title="Link"
+                            icon="sap-icon://chain-link"
+                        />
+                        <StandardListItem
+                            title="Avatar"
+                            icon="sap-icon://customer"
+                        />
+                        <StandardListItem
+                            title="Icon"
+                            icon="sap-icon://add-favorite"
+                        />
+                    </List>
+                </Panel>
+
+                <Panel
+                    expandable="true"
+                    expanded="false"
+                    headerText="Container Controls"
+                    width="auto"
+                    class="sapUiNoContentPadding"
+                >
+                    <List>
+                        <dragDropConfig>
+                            <dnd:DragInfo sourceAggregation="items" />
+                        </dragDropConfig>
+                        <StandardListItem
+                            title="Panel"
+                            icon="sap-icon://value-help"
+                        />
+                        <StandardListItem
+                            title="VBox"
+                            icon="sap-icon://resize-vertical"
+                        />
+                        <StandardListItem
+                            title="HBox"
+                            icon="sap-icon://resize-horizontal"
+                        />
+                        <StandardListItem
+                            title="SimpleForm"
+                            icon="sap-icon://form"
+                        />
+                    </List>
+                </Panel>
+
+                <Panel
+                    expandable="true"
+                    expanded="false"
+                    headerText="Data Controls"
+                    width="auto"
+                    class="sapUiNoContentPadding"
+                >
+                    <List>
+                        <dragDropConfig>
+                            <dnd:DragInfo sourceAggregation="items" />
+                        </dragDropConfig>
+                        <StandardListItem
+                            title="Table"
+                            icon="sap-icon://table-view"
+                        />
+                        <StandardListItem
+                            title="List"
+                            icon="sap-icon://list"
+                        />
+                        <StandardListItem
+                            title="Tree"
+                            icon="sap-icon://hierarchy"
+                        />
+                    </List>
+                </Panel>
+
+                <Panel
+                    expandable="true"
+                    expanded="false"
+                    headerText="Advanced Controls"
+                    width="auto"
+                    class="sapUiNoContentPadding"
+                >
+                    <List>
+                        <dragDropConfig>
+                            <dnd:DragInfo sourceAggregation="items" />
+                        </dragDropConfig>
+                        <StandardListItem
+                            title="Slider"
+                            icon="sap-icon://slider"
+                        />
+                        <StandardListItem
+                            title="Progress Indicator"
+                            icon="sap-icon://primary-key"
+                        />
+                        <StandardListItem
+                            title="Object Status"
+                            icon="sap-icon://sys-enter-2"
+                        />
+                        <StandardListItem
+                            title="Object Identifier"
+                            icon="sap-icon://badge"
+                        />
+                    </List>
+                </Panel>
+            </VBox>
+
+            <VBox
+                width="60%"
+                class="sapUiSmallMargin"
+            >
+                <Title text="Canvas" />
+                <Panel
+                    width="100%"
+                    height="500px"
+                >
+                    <VBox
+                        id="canvas"
+                        width="100%"
+                    >
+                        <dragDropConfig>
+                            <dnd:DropInfo drop="onDrop" />
+                        </dragDropConfig>
+                        <Text
+                            id="dropText"
+                            text="Drop Controls Here"
+                        />
+                    </VBox>
+                </Panel>
+            </VBox>
+
+            <VBox
+                width="20%"
+                class="sapUiSmallMargin"
+            >
+                <Title text="Properties" />
+
+                <VBox
+                    id="propertiesContainer"
+                    width="100%"
+                />
+
+                <Button
+                    text="Delete Control"
+                    icon="sap-icon://delete"
+                    type="Reject"
+                    width="100%"
+                    class="sapUiMediumMarginTop"
+                    visible="{= !!${selected>/id}}"
+                    press="onDeleteSelectedControl"
+                />
+            </VBox>
+        </HBox>
+
+        <dependents>
+            <Dialog
+                id="previewDialog"
+                title="Live Preview"
+                stretch="true"
+            >
+                <content>
+                    <VBox
+                        id="previewCanvas"
+                        class="sapUiMediumMargin"
+                        width="100%"
+                    />
+                </content>
+                <beginButton>
+                    <Button
+                        text="Close Preview"
+                        press="onClosePreview"
+                    />
+                </beginButton>
+            </Dialog>
+
+            <Dialog
+                id="jsonDialog"
+                title="JSON Editor"
+                contentWidth="600px"
+                contentHeight="500px"
+            >
+                <content>
+                    <TextArea
+                        id="jsonEditor"
+                        value="{dialog>/jsonString}"
+                        width="100%"
+                        height="100%"
+                        growing="true"
+                    />
+                </content>
+                <beginButton>
+                    <Button
+                        text="Apply Changes"
+                        type="Emphasized"
+                        press="onApplyJson"
+                    />
+                </beginButton>
+                <endButton>
+                    <Button
+                        text="Close"
+                        press="onCloseJson"
+                    />
+                </endButton>
+            </Dialog>
+        </dependents>
+
+        <HBox
+            width="100%"
+            justifyContent="SpaceBetween"
+        />
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer />
+                <Button
+                    text="Live Preview"
+                    icon="sap-icon://sys-monitor"
+                    type="Emphasized"
+                    press="onPreview"
+                />
+                <Button
+                    text="JSON Editor"
+                    icon="sap-icon://syntax"
+                    press="onViewJson"
+                />
+                <Button
+                    text="Download JSON"
+                    icon="sap-icon://download"
+                    type="Accept"
+                    press="onExport"
+                />
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>
