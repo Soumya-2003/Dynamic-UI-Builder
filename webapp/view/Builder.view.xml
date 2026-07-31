@@ -3,6 +3,7 @@
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
     xmlns:dnd="sap.ui.core.dnd"
+    xmlns:core="sap.ui.core"
 >
     <Page
         id="page"
@@ -249,18 +250,30 @@
                     width="100%"
                     height="500px"
                 >
-                    <VBox
+                    <List
                         id="canvas"
                         width="100%"
+                        mode="None"
+                        class="sapUiNoContentPadding flexCanvasList" 
                     >
                         <dragDropConfig>
-                            <dnd:DropInfo drop="onDrop" />
+                            <dnd:DragInfo sourceAggregation="items" />
+                            <dnd:DropInfo 
+                                targetAggregation="items" 
+                                dropPosition="Between" 
+                                drop="onDrop" 
+                            />
                         </dragDropConfig>
-                        <Text
-                            id="dropText"
-                            text="Drop Controls Here"
-                        />
-                    </VBox>
+                        <items>
+                            <CustomListItem id="dropTextItem">
+                                <Text
+                                    id="dropText"
+                                    text="Drop Controls Here"
+                                    class="sapUiMediumMargin"
+                                />
+                            </CustomListItem>
+                        </items>
+                    </List>
                 </Panel>
             </VBox>
 
@@ -276,6 +289,16 @@
                 />
 
                 <Button
+                    text="Configure Data Control"
+                    icon="sap-icon://action-settings"
+                    type="Emphasized"
+                    width="100%"
+                    class="sapUiMediumMarginTop"
+                    visible="{= ${selected>/type} === 'Table' || ${selected>/type} === 'List' || ${selected>/type} === 'Tree' }"
+                    press="onOpenDataConfig"
+                />
+
+                <Button
                     text="Delete Control"
                     icon="sap-icon://delete"
                     type="Reject"
@@ -288,6 +311,198 @@
         </HBox>
 
         <dependents>
+            <Dialog id="dataConfigDialog" title="Configure {dialog>/type}" contentWidth="800px" contentHeight="600px" resizable="true">
+                <content>
+                <core:HTML content='&lt;input type="file" id="csvUploader" accept=".csv" style="display:none" onchange="window.handleCSVUpload(event)" /&gt;' />
+                   <IconTabBar expanded="true" class="sapUiResponsiveContentPadding">
+                        <items>
+                            <IconTabFilter text="Columns" icon="sap-icon://table-column" visible="{= ${dialog>/type} === 'Table' }">
+                                <Table items="{dialog>/columns}" mode="Delete" delete="onDeleteColumn">
+                                    <dragDropConfig>
+                                        <dnd:DragInfo sourceAggregation="items" />
+                                        <dnd:DropInfo targetAggregation="items" dropPosition="Between" drop="onDropDialogColumn" />
+                                    </dragDropConfig>
+                                    
+                                    <headerToolbar>
+                                        <Toolbar>
+                                            <Title text="Manage Columns"/>
+                                            <ToolbarSpacer/>
+                                            <Button icon="sap-icon://add" text="Add Column" press="onAddColumn"/>
+                                        </Toolbar>
+                                    </headerToolbar>
+                                    <columns>
+                                        <Column><Text text="Display Name"/></Column>
+                                        <Column><Text text="Width"/></Column>
+                                        <Column><Text text="Duplicate"/></Column>
+                                    </columns>
+                                    <items>
+                                        <ColumnListItem>
+                                            <cells>
+                                                <Input value="{dialog>name}" />
+                                                <Input value="{dialog>width}" placeholder="auto, 100px..." />
+                                                <Button icon="sap-icon://duplicate" press="onDuplicateColumn" />
+                                            </cells>
+                                        </ColumnListItem>
+                                    </items>
+                                </Table>
+                            </IconTabFilter>
+
+                            <IconTabFilter text="Rows &amp; Data" icon="sap-icon://table-row" visible="{= ${dialog>/type} === 'Table' }">
+                                <Toolbar class="sapUiTinyMarginBottom">
+                                    <Title text="Manage Data Rows"/>
+                                    <ToolbarSpacer/>
+                                    <Button icon="sap-icon://add" text="Add Empty Row" press="onAddRow"/>
+                                    <Button icon="sap-icon://excel-attachment" text="Import CSV" type="Emphasized" press="onTriggerCSVImport"/>
+                                </Toolbar>
+                                
+                                <Table items="{dialog>/rows}" mode="Delete" delete="onDeleteRow">
+                                    <dragDropConfig>
+                                        <dnd:DragInfo sourceAggregation="items" />
+                                        <dnd:DropInfo targetAggregation="items" dropPosition="Between" drop="onDropDialogRow" />
+                                    </dragDropConfig>
+
+                                    <columns>
+                                        <Column><Text text="Row ID"/></Column>
+                                        <Column><Text text="Highlight"/></Column>
+                                        <Column><Text text="Col 1 Data"/></Column>
+                                        <Column><Text text="Col 2 Data"/></Column>
+                                        <Column><Text text="Col 3 Data"/></Column>
+                                    </columns>
+                                    <items>
+                                        <ColumnListItem>
+                                            <cells>
+                                                <Text text="{dialog>rowId}" />
+                                                <Select selectedKey="{dialog>status}">
+                                                    <core:Item key="None" text="None"/>
+                                                    <core:Item key="Success" text="Success (Green)"/>
+                                                    <core:Item key="Warning" text="Warning (Orange)"/>
+                                                    <core:Item key="Error" text="Error (Red)"/>
+                                                    <core:Item key="Information" text="Info (Blue)"/>
+                                                </Select>
+                                                <Input value="{dialog>col1}" />
+                                                <Input value="{dialog>col2}" />
+                                                <Input value="{dialog>col3}" />
+                                            </cells>
+                                        </ColumnListItem>
+                                    </items>
+                                </Table>
+                            </IconTabFilter>
+
+                            <IconTabFilter text="List Items" icon="sap-icon://list" visible="{= ${dialog>/type} === 'List' }">
+                                <Table items="{dialog>/items}" mode="Delete" delete="onDeleteListItem">
+                                    
+                                    <dragDropConfig>
+                                        <dnd:DragInfo sourceAggregation="items" />
+                                        <dnd:DropInfo targetAggregation="items" dropPosition="Between" drop="onDropDialogListItem" />
+                                    </dragDropConfig>
+
+                                    <headerToolbar>
+                                        <Toolbar>
+                                            <Title text="Manage List Items"/>
+                                            <ToolbarSpacer/>
+                                            <Button icon="sap-icon://add" text="Add Item" press="onAddListItem"/>
+                                            <Button icon="sap-icon://excel-attachment" text="Import CSV" type="Emphasized" press="onTriggerCSVImport"/>
+                                        </Toolbar>
+                                    </headerToolbar>
+                                    <columns>
+                                        <Column><Text text="Title"/></Column>
+                                        <Column><Text text="Description"/></Column>
+                                        <Column><Text text="Icon URL"/></Column>
+                                        <Column><Text text="Status State"/></Column>
+                                    </columns>
+                                    <items>
+                                        <ColumnListItem>
+                                            <cells>
+                                                <Input value="{dialog>title}" placeholder="Item Title" />
+                                                <Input value="{dialog>description}" placeholder="Description..." />
+                                                <Input value="{dialog>icon}" placeholder="sap-icon://..." />
+                                                <Select selectedKey="{dialog>status}">
+                                                    <core:Item key="None" text="None"/>
+                                                    <core:Item key="Success" text="Success (Green)"/>
+                                                    <core:Item key="Warning" text="Warning (Orange)"/>
+                                                    <core:Item key="Error" text="Error (Red)"/>
+                                                    <core:Item key="Information" text="Info (Blue)"/>
+                                                </Select>
+                                            </cells>
+                                        </ColumnListItem>
+                                    </items>
+                                </Table>
+                            </IconTabFilter>
+
+                            <IconTabFilter text="Tree Hierarchy" icon="sap-icon://hierarchy" visible="{= ${dialog>/type} === 'Tree' }">
+                                <Table items="{dialog>/flatNodes}" mode="Delete" delete="onDeleteTreeNode">
+                                    <dragDropConfig>
+                                        <dnd:DragInfo sourceAggregation="items" />
+                                        <dnd:DropInfo targetAggregation="items" dropPosition="Between" drop="onDropDialogTreeNode" />
+                                    </dragDropConfig>
+                                    <headerToolbar>
+                                        <Toolbar>
+                                            <Title text="Manage Tree Nodes"/>
+                                            <ToolbarSpacer/>
+                                            <Button icon="sap-icon://add" text="Add Node" press="onAddTreeNode"/>
+                                            <Button icon="sap-icon://excel-attachment" text="Import CSV" type="Emphasized" press="onTriggerCSVImport"/>
+                                        </Toolbar>
+                                    </headerToolbar>
+                                    <columns>
+                                        <Column><Text text="Node ID (Internal)"/></Column>
+                                        <Column><Text text="Node Text"/></Column>
+                                        <Column><Text text="Parent ID (Blank for Root)"/></Column>
+                                    </columns>
+                                    <items>
+                                        <ColumnListItem>
+                                            <cells>
+                                                <Text text="{dialog>nodeId}" class="sapUiTinyMarginTopBottom" />
+                                                <Input value="{dialog>text}" />
+                                                <Input value="{dialog>parentId}" placeholder="e.g., node1" />
+                                            </cells>
+                                        </ColumnListItem>
+                                    </items>
+                                </Table>
+                            </IconTabFilter>
+
+                            <IconTabFilter text="Behavior &amp; Settings" icon="sap-icon://action-settings" visible="{= ${dialog>/type} === 'Table' }">
+                                <sap.ui.layout.form:SimpleForm xmlns:sap.ui.layout.form="sap.ui.layout.form" editable="true" layout="ResponsiveGridLayout">
+                                    
+                                    <Label text="Selection Mode (Checkboxes)" />
+                                    <Select selectedKey="{dialog>/selectionMode}">
+                                        <core:Item key="None" text="None" />
+                                        <core:Item key="SingleSelectLeft" text="Single Selection (Radio)" />
+                                        <core:Item key="MultiSelect" text="Multi Selection (Checkboxes)" />
+                                    </Select>
+
+                                    <Label text="Sort Data By" />
+                                    <Select selectedKey="{dialog>/sortBy}">
+                                        <core:Item key="None" text="No Sorting" />
+                                        <core:Item key="col1" text="Column 1" />
+                                        <core:Item key="col2" text="Column 2" />
+                                        <core:Item key="col3" text="Column 3" />
+                                    </Select>
+                                    
+                                    <Label text="Sort Direction" />
+                                    <Select selectedKey="{dialog>/sortOrder}" enabled="{= ${dialog>/sortBy} !== 'None'}">
+                                        <core:Item key="Asc" text="Ascending (A-Z)" />
+                                        <core:Item key="Desc" text="Descending (Z-A)" />
+                                    </Select>
+
+                                    <Label text="Enable Inline Editing" />
+                                    <Switch state="{dialog>/inlineEditing}" />
+
+                                    <Label text="Sticky Header" />
+                                    <Switch state="{dialog>/stickyHeader}" />
+                                    <Label text="Alternate Row Colors" />
+                                    <Switch state="{dialog>/alternateRowColors}" />
+                                </sap.ui.layout.form:SimpleForm>
+                            </IconTabFilter>
+                        </items>
+                    </IconTabBar>
+                </content>
+                <beginButton>
+                    <Button text="Apply Changes" type="Accept" press="onApplyDataConfig" />
+                </beginButton>
+                <endButton>
+                    <Button text="Cancel" press="onCloseDataConfig" />
+                </endButton>
+            </Dialog>
             <Dialog
                 id="previewDialog"
                 title="Live Preview"
