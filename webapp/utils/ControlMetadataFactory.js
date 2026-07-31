@@ -111,6 +111,19 @@ sap.ui.define([], function () {
                         alternateRowColors: true,
                         selectionMode: "MultiSelect", 
                         inlineEditing: false,
+                        enableSearch: false,
+                        enableActions: false,
+                        enableCustomActions: false, 
+                        customActionsHeader: "Custom Actions",
+                        customActions: [
+                            { 
+                                actionId: "act1", 
+                                label: "Approve", 
+                                icon: "sap-icon://accept", 
+                                buttonType: "Accept", 
+                                logic: "sap.m.MessageToast.show('Approving Item: ' + rowData.col1);" 
+                            }
+                        ],
                         sortBy: "None",    
                         sortOrder: "Asc",   
                         columns: [

@@ -1,0 +1,13 @@
+.builderContainer {
+    min-height: 50px;
+    min-width: 50px;
+    border: 1px dashed #cccccc;
+    padding: 0.5rem;
+    transition: background-color 0.2s ease;
+}
+
+.codeEditorTextArea textarea {
+    font-family: monospace !important;
+    font-size: 14px !important;
+    background-color: #fafafa !important;
+}

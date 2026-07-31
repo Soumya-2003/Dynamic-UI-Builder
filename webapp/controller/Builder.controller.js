@@ -32,9 +32,6 @@ sap.ui.define([
             };
         },
 
-        // ==========================================
-        // MAIN CANVAS DRAG & DROP ENGINE
-        // ==========================================
         onDrop: function (oEvent) {
             var oDraggedControl = oEvent.getParameter("draggedControl");
             var oDroppedControl = oEvent.getParameter("droppedControl");
@@ -43,8 +40,7 @@ sap.ui.define([
             var oModel = this.getView().getModel("layout");
             var aControls = oModel.getProperty("/controls") || [];
 
-            // DOM Crawler: Safely climbs the UI5 tree to find the Meta ID, avoiding all indexOfItem crashes!
-            var getMetaId = function(oCtrl) {
+            var getMetaId = function (oCtrl) {
                 while (oCtrl && typeof oCtrl.data === "function") {
                     var sId = oCtrl.data("metaId");
                     if (sId) return sId.toString();
@@ -54,30 +50,27 @@ sap.ui.define([
             };
 
             var sDroppedMetaId = getMetaId(oDroppedControl);
-            
-            // SCENARIO 1: DRAGGED FROM TOOLBOX (NEW ITEM)
+
             if (oDraggedControl.isA("sap.m.StandardListItem")) {
                 var sControlName = oDraggedControl.getTitle();
                 var oMetadata = ControlMetadataFactory.getMetadata(sControlName);
-                
+
                 if (!sDroppedMetaId) {
-                    aControls.push(oMetadata); // Empty Canvas
+                    aControls.push(oMetadata); 
                 } else {
-                    var iDroppedIndex = aControls.findIndex(function(c) { return c.id.toString() === sDroppedMetaId; });
+                    var iDroppedIndex = aControls.findIndex(function (c) { return c.id.toString() === sDroppedMetaId; });
                     var iNewIndex = iDroppedIndex + (sDropPosition === "After" ? 1 : 0);
                     aControls.splice(iNewIndex, 0, oMetadata);
                 }
-            } 
-            // SCENARIO 2: DRAGGED FROM CANVAS (REORDER ITEM)
+            }
             else {
                 var sDraggedMetaId = getMetaId(oDraggedControl);
                 var sTargetMetaId = sDroppedMetaId;
 
-                // Abort if dragging onto itself or into the void
                 if (!sDraggedMetaId || !sTargetMetaId || sDraggedMetaId === sTargetMetaId) return;
 
-                var iDraggedIndex = aControls.findIndex(function(c) { return c.id.toString() === sDraggedMetaId; });
-                var iTargetIndex = aControls.findIndex(function(c) { return c.id.toString() === sTargetMetaId; });
+                var iDraggedIndex = aControls.findIndex(function (c) { return c.id.toString() === sDraggedMetaId; });
+                var iTargetIndex = aControls.findIndex(function (c) { return c.id.toString() === sTargetMetaId; });
 
                 if (iDraggedIndex === -1 || iTargetIndex === -1) return;
 
@@ -94,18 +87,14 @@ sap.ui.define([
             this._renderCanvas();
         },
 
-        // ==========================================
-        // CENTRAL RENDER ENGINE
-        // ==========================================
         _renderCanvas: function () {
             var oModel = this.getView().getModel("layout");
             var aControls = oModel.getProperty("/controls") || [];
             var oCanvas = this.byId("canvas");
-            
+
             oCanvas.destroyItems();
 
             if (aControls.length === 0) {
-                // Ensure placeholder uses CustomListItem to match the List container
                 var oDropTextItem = new sap.m.CustomListItem({
                     content: [new sap.m.Text({ text: "Drop Controls Here" }).addStyleClass("sapUiMediumMargin")]
                 });
@@ -115,46 +104,40 @@ sap.ui.define([
 
             aControls.forEach(function (oMetadata) {
                 var oControl = ControlFactory.createControl(oMetadata);
-                
+
                 if (oControl) {
                     oControl.data("metaId", oMetadata.id);
-                    
-                    // --- NEW: Sizing Wrapper ---
+
                     var oWrapper = new sap.m.VBox({
                         width: oMetadata.width || "100%",
                         height: oMetadata.height || "auto",
                         items: [oControl]
                     });
 
-                    // Apply UI5 Margins
                     if (oMetadata.margin && oMetadata.margin !== "None") {
                         oWrapper.addStyleClass("sapUi" + oMetadata.margin + "Margin");
                     }
-                    // Apply Custom CSS
                     if (oMetadata.customCssClass) {
                         oControl.addStyleClass(oMetadata.customCssClass);
                     }
-                    // ---------------------------
+                   
 
                     var oCustomItem = new sap.m.CustomListItem({
-                        content: [oWrapper] // CHANGED: Pass oWrapper instead of oControl
+                        content: [oWrapper] 
                     });
-                    
-                    oCustomItem.addStyleClass("canvasListItem"); // NEW: For CSS styling
+
+                    oCustomItem.addStyleClass("canvasListItem"); 
                     oCustomItem.data("metaId", oMetadata.id);
-                    
+
                     oCustomItem.addEventDelegate({
                         onclick: this.onControlSelect.bind(this, oControl)
                     }, this);
-                    
+
                     oCanvas.addItem(oCustomItem);
                 }
             }.bind(this));
         },
 
-        // ==========================================
-        // PROPERTIES & CONTROLS MANAGEMENT
-        // ==========================================
         onControlSelect: function (oControl, oEvent) {
             if (oEvent && oEvent.stopPropagation) oEvent.stopPropagation();
 
@@ -199,20 +182,20 @@ sap.ui.define([
                     });
                 }
                 else if (typeof vValue === "boolean") {
-                    oInputControl = new sap.m.CheckBox({ 
-                        selected: "{selected>/" + sKey + "}", 
-                        select: this.onLivePropertyChange.bind(this) 
+                    oInputControl = new sap.m.CheckBox({
+                        selected: "{selected>/" + sKey + "}",
+                        select: this.onLivePropertyChange.bind(this)
                     });
                 } else if (typeof vValue === "number") {
-                    oInputControl = new sap.m.Input({ 
-                        value: "{selected>/" + sKey + "}", 
-                        type: "Number", 
-                        change: this.onLivePropertyChange.bind(this) 
+                    oInputControl = new sap.m.Input({
+                        value: "{selected>/" + sKey + "}",
+                        type: "Number",
+                        change: this.onLivePropertyChange.bind(this)
                     });
                 } else {
-                    oInputControl = new sap.m.Input({ 
-                        value: "{selected>/" + sKey + "}", 
-                        change: this.onLivePropertyChange.bind(this) 
+                    oInputControl = new sap.m.Input({
+                        value: "{selected>/" + sKey + "}",
+                        change: this.onLivePropertyChange.bind(this)
                     });
                 }
                 oInputControl.addStyleClass("sapUiTinyMarginBottom");
@@ -225,11 +208,11 @@ sap.ui.define([
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
 
-            var iIndex = aControls.findIndex(function(c) { return c.id === oSelectedData.id; });
+            var iIndex = aControls.findIndex(function (c) { return c.id === oSelectedData.id; });
             if (iIndex !== -1) {
                 aControls[iIndex] = oSelectedData;
                 oLayoutModel.setProperty("/controls", aControls);
-                this._renderCanvas(); 
+                this._renderCanvas();
             }
         },
 
@@ -250,14 +233,11 @@ sap.ui.define([
             oLayoutModel.setProperty("/controls", aUpdatedControls);
             this.getView().getModel("selected").setData({});
             this.byId("propertiesContainer").destroyItems();
-            
-            this._renderCanvas(); 
+
+            this._renderCanvas();
             sap.m.MessageToast.show("Control deleted successfully.");
         },
 
-        // ==========================================
-        // DATA CONFIGURATOR DIALOG
-        // ==========================================
         onOpenDataConfig: function () {
             var oSelectedData = this.getView().getModel("selected").getData();
             var oClonedData = JSON.parse(JSON.stringify(oSelectedData));
@@ -273,20 +253,19 @@ sap.ui.define([
             var oEditedData = this.getView().getModel("dialog").getData();
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
-            
-            var iIndex = aControls.findIndex(function(c) { return c.id === oEditedData.id; });
+
+            var iIndex = aControls.findIndex(function (c) { return c.id === oEditedData.id; });
             if (iIndex !== -1) {
-                aControls[iIndex] = oEditedData; 
+                aControls[iIndex] = oEditedData;
                 oLayoutModel.setProperty("/controls", aControls);
             }
 
             this.getView().getModel("selected").setData(oEditedData);
-            this._renderCanvas(); 
+            this._renderCanvas();
             this.byId("dataConfigDialog").close();
             sap.m.MessageToast.show("Data Control configurations applied successfully!");
         },
 
-        // --- Column & Row Reordering (Dialogs) ---
         onDropDialogColumn: function (oEvent) {
             var oDraggedItem = oEvent.getParameter("draggedControl");
             var oDroppedOnItem = oEvent.getParameter("droppedControl");
@@ -419,18 +398,40 @@ sap.ui.define([
             this.getView().getModel("dialog").setProperty("/flatNodes", aNodes);
         },
 
-        // --- CSV Import ---
+        onAddCustomAction: function () {
+            var oDialogModel = this.getView().getModel("dialog");
+            var aActions = oDialogModel.getProperty("/customActions") || [];
+
+            aActions.push({
+                actionId: "act_" + Date.now().toString().slice(-4),
+                label: "New Action",
+                icon: "sap-icon://action",
+                buttonType: "Default",
+                logic: "sap.m.MessageToast.show('You clicked ' + rowData.rowId);"
+            });
+
+            oDialogModel.setProperty("/customActions", aActions);
+        },
+
+        onDeleteCustomAction: function (oEvent) {
+            var iIndex = parseInt(oEvent.getParameter("listItem").getBindingContext("dialog").getPath().split("/")[2], 10);
+            var aActions = this.getView().getModel("dialog").getProperty("/customActions");
+
+            aActions.splice(iIndex, 1);
+            this.getView().getModel("dialog").setProperty("/customActions", aActions);
+        },
+
         onTriggerCSVImport: function () {
             var oFileUploader = document.getElementById("csvUploader");
             if (oFileUploader) oFileUploader.click();
         },
         _parseCSV: function (sCSVText) {
-            var aLines = sCSVText.split("\n").filter(function(line) { return line.trim() !== ""; });
+            var aLines = sCSVText.split("\n").filter(function (line) { return line.trim() !== ""; });
             if (aLines.length < 2) return sap.m.MessageToast.show("Invalid CSV: Must have headers and at least one row of data.");
 
             var oDialogModel = this.getView().getModel("dialog");
             var sControlType = oDialogModel.getProperty("/type");
-            var aHeaders = aLines[0].split(",").map(function(h) { return h.trim(); });
+            var aHeaders = aLines[0].split(",").map(function (h) { return h.trim(); });
 
             if (sControlType === "Table") {
                 var aNewColumns = []; var aNewRows = [];
@@ -462,9 +463,6 @@ sap.ui.define([
             sap.m.MessageToast.show(sControlType + " data imported successfully!");
         },
 
-        // ==========================================
-        // PREVIEW, JSON & EXPORT
-        // ==========================================
         onPreview: function () {
             var oPreviewCanvas = this.byId("previewCanvas");
             var aControls = this.getView().getModel("layout").getProperty("/controls");
@@ -487,7 +485,7 @@ sap.ui.define([
             try {
                 var aParsedData = JSON.parse(sEditedJson);
                 this.getView().getModel("layout").setProperty("/controls", aParsedData);
-                this._renderCanvas(); 
+                this._renderCanvas();
                 this.byId("jsonDialog").close();
                 sap.m.MessageToast.show("Layout successfully updated!");
             } catch (e) {
@@ -505,6 +503,35 @@ sap.ui.define([
             document.body.appendChild(oLink);
             oLink.click();
             document.body.removeChild(oLink);
-        }
+        },
+
+        onOpenCodeEditor: function (oEvent) {
+            var oButton = oEvent.getSource();
+            var oContext = oButton.getBindingContext("dialog");
+
+            this._sActiveActionContextPath = oContext.getPath();
+            var sCurrentLogic = oContext.getProperty("logic");
+
+            var oDialogModel = this.getView().getModel("dialog");
+            oDialogModel.setProperty("/currentActionLogic", sCurrentLogic);
+
+            this.byId("codeEditorDialog").open();
+        },
+
+        onSaveCodeEditor: function () {
+            var oDialogModel = this.getView().getModel("dialog");
+            var sUpdatedLogic = oDialogModel.getProperty("/currentActionLogic");
+
+            if (this._sActiveActionContextPath) {
+                oDialogModel.setProperty(this._sActiveActionContextPath + "/logic", sUpdatedLogic);
+            }
+
+            this.byId("codeEditorDialog").close();
+            sap.m.MessageToast.show("JavaScript logic saved successfully!");
+        },
+
+        onCloseCodeEditor: function () {
+            this.byId("codeEditorDialog").close();
+        },
     });
 });
