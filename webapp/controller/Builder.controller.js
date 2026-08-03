@@ -30,6 +30,72 @@ sap.ui.define([
                 };
                 reader.readAsText(file);
             };
+
+            this._aHistoryStack = [JSON.stringify([])];
+            this._aRedoStack = [];
+        },
+
+        
+        onDeviceSwitch: function (oEvent) {
+            var sWidth = oEvent.getParameter("item").getKey();
+            var oCanvas = this.byId("canvas");
+            
+            oCanvas.setWidth(sWidth);
+            
+            if (sWidth !== "100%") {
+                oCanvas.addStyleClass("sapUiAutoMarginLeft").addStyleClass("sapUiAutoMarginRight");
+            } else {
+                oCanvas.removeStyleClass("sapUiAutoMarginLeft").removeStyleClass("sapUiAutoMarginRight");
+            }
+        },
+
+        _saveState: function () {
+            clearTimeout(this._stateTimeout);
+            this._stateTimeout = setTimeout(function () {
+                var aControls = this.getView().getModel("layout").getProperty("/controls");
+                var sState = JSON.stringify(aControls || []);
+                
+                
+                if (this._aHistoryStack[this._aHistoryStack.length - 1] !== sState) {
+                    this._aHistoryStack.push(sState);
+                    this._aRedoStack = []; 
+                }
+            }.bind(this), 500);
+        },
+
+        onUndo: function () {
+            if (this._aHistoryStack.length > 1) {
+                var sCurrentState = this._aHistoryStack.pop();
+                this._aRedoStack.push(sCurrentState); 
+                
+                var sPreviousState = this._aHistoryStack[this._aHistoryStack.length - 1];
+                this.getView().getModel("layout").setProperty("/controls", JSON.parse(sPreviousState));
+                
+                // Clear selection and re-render
+                this.getView().getModel("selected").setData({});
+                this.byId("propertiesContainer").destroyItems();
+                this._renderCanvas();
+                sap.m.MessageToast.show("Action Undone");
+            } else {
+                sap.m.MessageToast.show("Nothing to undo.");
+            }
+        },
+
+        onRedo: function () {
+            if (this._aRedoStack.length > 0) {
+                var sNextState = this._aRedoStack.pop();
+                this._aHistoryStack.push(sNextState); // Move back to history
+                
+                this.getView().getModel("layout").setProperty("/controls", JSON.parse(sNextState));
+                
+                // Clear selection and re-render
+                this.getView().getModel("selected").setData({});
+                this.byId("propertiesContainer").destroyItems();
+                this._renderCanvas();
+                sap.m.MessageToast.show("Action Redone");
+            } else {
+                sap.m.MessageToast.show("Nothing to redo.");
+            }
         },
 
         onDrop: function (oEvent) {
@@ -85,6 +151,7 @@ sap.ui.define([
 
             oModel.setProperty("/controls", aControls);
             this._renderCanvas();
+            this._saveState();
         },
 
         _renderCanvas: function () {
@@ -125,6 +192,7 @@ sap.ui.define([
                     var oCustomItem = new sap.m.CustomListItem({
                         content: [oWrapper] 
                     });
+
 
                     oCustomItem.addStyleClass("canvasListItem"); 
                     oCustomItem.data("metaId", oMetadata.id);
@@ -208,18 +276,22 @@ sap.ui.define([
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
 
-            var iIndex = aControls.findIndex(function (c) { return c.id === oSelectedData.id; });
+            var iIndex = aControls.findIndex(function (c) { 
+                return c.id === oSelectedData.id; 
+            });
             if (iIndex !== -1) {
                 aControls[iIndex] = oSelectedData;
                 oLayoutModel.setProperty("/controls", aControls);
                 this._renderCanvas();
             }
+            this._saveState();
         },
 
         onDeleteSelectedControl: function () {
             var oSelectedData = this.getView().getModel("selected").getData();
             if (!oSelectedData || !oSelectedData.id) {
                 sap.m.MessageToast.show("Please select a control first.");
+                this._saveState();
                 return;
             }
 
@@ -254,7 +326,9 @@ sap.ui.define([
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
 
-            var iIndex = aControls.findIndex(function (c) { return c.id === oEditedData.id; });
+            var iIndex = aControls.findIndex(function (c) { 
+                return c.id === oEditedData.id; 
+            });
             if (iIndex !== -1) {
                 aControls[iIndex] = oEditedData;
                 oLayoutModel.setProperty("/controls", aControls);
@@ -264,6 +338,7 @@ sap.ui.define([
             this._renderCanvas();
             this.byId("dataConfigDialog").close();
             sap.m.MessageToast.show("Data Control configurations applied successfully!");
+            this._saveState();
         },
 
         onDropDialogColumn: function (oEvent) {
@@ -338,7 +413,7 @@ sap.ui.define([
             oDialogModel.setProperty("/flatNodes", aNodes);
         },
 
-        // --- Dialog Actions ---
+        
         onAddColumn: function () {
             var oDialogModel = this.getView().getModel("dialog");
             var aColumns = oDialogModel.getProperty("/columns") || [];
@@ -488,6 +563,7 @@ sap.ui.define([
                 this._renderCanvas();
                 this.byId("jsonDialog").close();
                 sap.m.MessageToast.show("Layout successfully updated!");
+                this._saveState();
             } catch (e) {
                 sap.m.MessageToast.show("Failed to apply changes. Check console for details.");
             }
