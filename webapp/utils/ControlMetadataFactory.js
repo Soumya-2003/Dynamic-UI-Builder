@@ -10,6 +10,7 @@ sap.ui.define([], function () {
                 width: "100%",        
                 height: "auto",   
                 margin: "Tiny",
+                hAlign: "Start",
                 customCssClass: ""
             };
 

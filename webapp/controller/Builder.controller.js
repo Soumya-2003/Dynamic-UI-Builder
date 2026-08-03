@@ -87,7 +87,6 @@ sap.ui.define([
                 var sPreviousState = this._aHistoryStack[this._aHistoryStack.length - 1];
                 this.getView().getModel("layout").setProperty("/controls", JSON.parse(sPreviousState));
                 
-                // Clear selection and re-render
                 this.getView().getModel("selected").setData({});
                 this.byId("propertiesContainer").destroyItems();
                 this._renderCanvas();
@@ -100,11 +99,10 @@ sap.ui.define([
         onRedo: function () {
             if (this._aRedoStack.length > 0) {
                 var sNextState = this._aRedoStack.pop();
-                this._aHistoryStack.push(sNextState); // Move back to history
+                this._aHistoryStack.push(sNextState); 
                 
                 this.getView().getModel("layout").setProperty("/controls", JSON.parse(sNextState));
                 
-                // Clear selection and re-render
                 this.getView().getModel("selected").setData({});
                 this.byId("propertiesContainer").destroyItems();
                 this._renderCanvas();
@@ -134,41 +132,19 @@ sap.ui.define([
             var sDroppedMetaId = getMetaId(oDroppedControl);
 
             if (oDraggedControl.isA("sap.m.StandardListItem")) {
-                var sControlType = oDraggedControl.getTitle();
-                var oMetadata = ControlMetadataFactory.getMetadata(sControlType);
+                var oMetadata = ControlMetadataFactory.getMetadata(oDraggedControl.getTitle());
                 
-                // THE ARCHITECT'S FIX: Auto-generate a Label for Data Entry fields
-                var aItemsToInsert = [oMetadata];
-                var aNeedsLabel = ["Input", "TextArea", "ComboBox", "Select", "MultiComboBox", "DatePicker", "TimePicker", "DateTimePicker", "SearchField"];
-                
-                if (aNeedsLabel.indexOf(sControlType) > -1) {
-                    var oLabelMeta = ControlMetadataFactory.getMetadata("Label");
-                    oLabelMeta.text = sControlType + " Label";
-                    // Ensure the Label gets a uniquely guaranteed ID so it doesn't clash with the Input
-                    oLabelMeta.id = Date.now().toString() + "_label"; 
-                    
-                    // Push the Label first, then the Input
-                    aItemsToInsert = [oLabelMeta, oMetadata];
-                }
-
                 if (!sDroppedMetaId) {
-                    // Empty Canvas: Push both items
-                    aItemsToInsert.forEach(function(item) { aControls.push(item); });
+                    aControls.push(oMetadata); 
                 } else {
                     if (sDropPosition === "On") {
-                        // Dropping directly INSIDE a container
                         var oTargetNode = this._findNodeById(aControls, sDroppedMetaId);
-                        if (oTargetNode && oTargetNode.controls) {
-                            aItemsToInsert.forEach(function(item) { oTargetNode.controls.push(item); });
-                        }
+                        if (oTargetNode && oTargetNode.controls) oTargetNode.controls.push(oMetadata);
                     } else {
-                        // Dropping Before/After an item
                         var oResult = this._findArrayAndIndex(aControls, sDroppedMetaId);
                         if (oResult) {
                             var iNewIndex = oResult.index + (sDropPosition === "After" ? 1 : 0);
-                            
-                            // Splice magic: Injects all items from our array directly into the canvas array at the target index
-                            Array.prototype.splice.apply(oResult.array, [iNewIndex, 0].concat(aItemsToInsert));
+                            oResult.array.splice(iNewIndex, 0, oMetadata);
                         }
                     }
                 }
@@ -185,14 +161,24 @@ sap.ui.define([
 
             if (oMetadata.customCssClass) oInnerControl.addStyleClass(oMetadata.customCssClass);
 
-            // Universal Sizing & Interaction Wrapper
+            // 1. EXACT SIZING: Applied directly to the control (No margins here = no overflow!)
+            if (oInnerControl.setWidth) { 
+                try { oInnerControl.setWidth(oMetadata.width || "100%"); } catch (e) {} 
+            }
+
+            // 2. THE MASTER WRAPPER: VBox handles horizontal alignment flawlessly via 'alignItems'
             var oSizingWrapper = new sap.m.VBox({
-                width: oMetadata.width || "100%",
+                width: "auto", // Prevents margin overflow
                 height: oMetadata.height || "auto",
+                alignItems: oMetadata.hAlign || "Start", // Left, Center, or Right
+                layoutData: new sap.m.FlexItemData({ growFactor: 1 }), // Stretches to fill available screen perfectly
                 items: [oInnerControl]
             });
 
-            if (oMetadata.margin && oMetadata.margin !== "None") oSizingWrapper.addStyleClass("sapUi" + oMetadata.margin + "Margin");
+            // 3. MARGINS: Applied safely to the wrapper so Flexbox absorbs them
+            if (oMetadata.margin && oMetadata.margin !== "None") {
+                oSizingWrapper.addStyleClass("sapUi" + oMetadata.margin + "Margin");
+            }
 
             // Tag for DOM Crawler
             oSizingWrapper.data("metaId", oMetadata.id.toString());
@@ -203,23 +189,18 @@ sap.ui.define([
                 groupName: "uiBuilder"
             }));
 
-            // ==========================================
-            // DYNAMIC DROP ZONES FOR CONTAINERS
-            // ==========================================
+            // Dynamic Drop Zones for Containers
             if (["Panel", "VBox", "HBox", "SimpleForm"].indexOf(oMetadata.type) > -1) {
-                oInnerControl.addStyleClass("designTimeContainer"); // Visual dashed border
+                oInnerControl.addStyleClass("designTimeContainer"); 
 
                 if (oMetadata.type === "SimpleForm") {
-                    // THE ARCHITECT'S FIX: SimpleForm is a Facade macro-control. Native DnD fails on it.
-                    // We attach the DropInfo to our VBox Wrapper instead to catch the event!
                     oSizingWrapper.addDragDropConfig(new sap.ui.core.dnd.DropInfo({
                         targetAggregation: "items", 
-                        dropPosition: "On", // Only allow dropping ON the form wrapper
+                        dropPosition: "On",
                         groupName: "uiBuilder",
                         drop: this.onDrop.bind(this)
                     }));
                 } else {
-                    // Standard Containers (Panel, VBox, HBox) work normally
                     var sAgg = (oMetadata.type === "Panel") ? "content" : "items";
                     oInnerControl.addDragDropConfig(new sap.ui.core.dnd.DropInfo({
                         targetAggregation: sAgg,
@@ -229,23 +210,19 @@ sap.ui.define([
                     }));
                 }
 
-                // Recurse deeper and append children safely
+                // Recurse deeper
                 if (oMetadata.controls) {
                     oMetadata.controls.forEach(function(childMeta) {
                         var oChildWrapper = this._buildControlTree(childMeta);
                         if (oChildWrapper) {
-                            
                             if (oMetadata.type === "SimpleForm") {
-                                // THE ARCHITECT'S FIX: Restore Form Layout for Wrappers!
-                                // If it's a Label, start a new line (Span 4). Otherwise, place it next to it (Span 8).
                                 var bIsLabel = (childMeta.type === "Label");
-                                
+                                // This GridData gracefully overwrites the FlexItemData above!
                                 oChildWrapper.setLayoutData(new sap.ui.layout.GridData({
                                     span: bIsLabel ? "XL4 L4 M4 S12" : "XL8 L8 M8 S12",
                                     linebreakL: bIsLabel,
                                     linebreakM: bIsLabel
                                 }));
-                                
                                 oInnerControl.addContent(oChildWrapper);
                             } 
                             else if (oMetadata.type === "Panel") {
@@ -254,7 +231,6 @@ sap.ui.define([
                             else {
                                 oInnerControl.addItem(oChildWrapper);
                             }
-                            
                         }
                     }.bind(this));
                 }
@@ -334,6 +310,17 @@ sap.ui.define([
                             new sap.ui.core.Item({ key: "Small", text: "Small" }),
                             new sap.ui.core.Item({ key: "Medium", text: "Medium" }),
                             new sap.ui.core.Item({ key: "Large", text: "Large" })
+                        ]
+                    });
+                }
+                else if (sKey === "hAlign") {
+                    oInputControl = new sap.m.Select({
+                        selectedKey: "{selected>/" + sKey + "}",
+                        change: this.onLivePropertyChange.bind(this),
+                        items: [
+                            new sap.ui.core.Item({ key: "Start", text: "Left (Start)" }),
+                            new sap.ui.core.Item({ key: "Center", text: "Center" }),
+                            new sap.ui.core.Item({ key: "End", text: "Right (End)" })
                         ]
                     });
                 }
@@ -637,51 +624,55 @@ sap.ui.define([
         },
 
         _buildPreviewTree: function(oMetadata) {
-            // 1. Build the raw control
-            var oControl = ControlFactory.createControl(oMetadata);
-            if (!oControl) return null;
+            var oInnerControl = ControlFactory.createControl(oMetadata);
+            if (!oInnerControl) return null;
 
-            // 2. Apply styling and margins natively (no wrappers)
-            if (oMetadata.customCssClass) {
-                oControl.addStyleClass(oMetadata.customCssClass);
+            if (oMetadata.customCssClass) oInnerControl.addStyleClass(oMetadata.customCssClass);
+
+            // 1. EXACT SIZING
+            if (oInnerControl.setWidth) { 
+                try { oInnerControl.setWidth(oMetadata.width || "100%"); } catch (e) {} 
             }
+
+            // 2. MASTER PREVIEW WRAPPER
+            var oPreviewWrapper = new sap.m.VBox({
+                width: "auto",
+                height: oMetadata.height || "auto",
+                alignItems: oMetadata.hAlign || "Start",
+                layoutData: new sap.m.FlexItemData({ growFactor: 1 }),
+                items: [oInnerControl]
+            });
+
+            // 3. MARGINS
             if (oMetadata.margin && oMetadata.margin !== "None") {
-                oControl.addStyleClass("sapUi" + oMetadata.margin + "Margin");
-            }
-            if (oMetadata.width && oControl.setWidth) {
-                try { oControl.setWidth(oMetadata.width); } catch (e) {}
+                oPreviewWrapper.addStyleClass("sapUi" + oMetadata.margin + "Margin");
             }
 
-            // 3. RECURSION: If it is a container, build its children!
+            // RECURSION
             if (["Panel", "VBox", "HBox", "SimpleForm"].indexOf(oMetadata.type) > -1 && oMetadata.controls) {
                 oMetadata.controls.forEach(function(childMeta) {
-                    var oChildControl = this._buildPreviewTree(childMeta);
-                    if (oChildControl) {
-                        
-                        // THE ARCHITECT'S FIX: Apply Form GridData directly to the raw preview controls
+                    var oChildWrapper = this._buildPreviewTree(childMeta);
+                    if (oChildWrapper) {
                         if (oMetadata.type === "SimpleForm") {
                             var bIsLabel = (childMeta.type === "Label");
-                            
-                            oChildControl.setLayoutData(new sap.ui.layout.GridData({
+                            oChildWrapper.setLayoutData(new sap.ui.layout.GridData({
                                 span: bIsLabel ? "XL4 L4 M4 S12" : "XL8 L8 M8 S12",
                                 linebreakL: bIsLabel,
                                 linebreakM: bIsLabel
                             }));
-                            
-                            oControl.addContent(oChildControl);
+                            oInnerControl.addContent(oChildWrapper);
                         } 
                         else if (oMetadata.type === "Panel") {
-                            oControl.addContent(oChildControl);
+                            oInnerControl.addContent(oChildWrapper);
                         } 
                         else {
-                            oControl.addItem(oChildControl);
+                            oInnerControl.addItem(oChildWrapper);
                         }
-                        
                     }
                 }.bind(this));
             }
 
-            return oControl;
+            return oPreviewWrapper;
         },
 
         onPreview: function () {
