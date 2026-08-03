@@ -11,3 +11,11 @@
     font-size: 14px !important;
     background-color: #fafafa !important;
 }
+
+.designTimeContainer {
+    min-height: 60px;
+    min-width: 60px;
+    border: 2px dashed #b0bec5 !important;
+    padding: 10px;
+    background-color: rgba(240, 248, 255, 0.4);
+}

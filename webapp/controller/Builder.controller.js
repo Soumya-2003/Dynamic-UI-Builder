@@ -35,7 +35,23 @@ sap.ui.define([
             this._aRedoStack = [];
         },
 
-        
+        _findArrayAndIndex: function (aNodes, sId) {
+            for (var i = 0; i < aNodes.length; i++) {
+                if (aNodes[i].id.toString() === sId.toString()) return { array: aNodes, index: i };
+                // If this node has a controls array, search deeper!
+                if (aNodes[i].controls) {
+                    var oResult = this._findArrayAndIndex(aNodes[i].controls, sId);
+                    if (oResult) return oResult;
+                }
+            }
+            return null;
+        },
+
+        _findNodeById: function (aNodes, sId) {
+            var oResult = this._findArrayAndIndex(aNodes, sId);
+            return oResult ? oResult.array[oResult.index] : null;
+        },
+
         onDeviceSwitch: function (oEvent) {
             var sWidth = oEvent.getParameter("item").getKey();
             var oCanvas = this.byId("canvas");
@@ -118,35 +134,44 @@ sap.ui.define([
             var sDroppedMetaId = getMetaId(oDroppedControl);
 
             if (oDraggedControl.isA("sap.m.StandardListItem")) {
-                var sControlName = oDraggedControl.getTitle();
-                var oMetadata = ControlMetadataFactory.getMetadata(sControlName);
+                var sControlType = oDraggedControl.getTitle();
+                var oMetadata = ControlMetadataFactory.getMetadata(sControlType);
+                
+                // THE ARCHITECT'S FIX: Auto-generate a Label for Data Entry fields
+                var aItemsToInsert = [oMetadata];
+                var aNeedsLabel = ["Input", "TextArea", "ComboBox", "Select", "MultiComboBox", "DatePicker", "TimePicker", "DateTimePicker", "SearchField"];
+                
+                if (aNeedsLabel.indexOf(sControlType) > -1) {
+                    var oLabelMeta = ControlMetadataFactory.getMetadata("Label");
+                    oLabelMeta.text = sControlType + " Label";
+                    // Ensure the Label gets a uniquely guaranteed ID so it doesn't clash with the Input
+                    oLabelMeta.id = Date.now().toString() + "_label"; 
+                    
+                    // Push the Label first, then the Input
+                    aItemsToInsert = [oLabelMeta, oMetadata];
+                }
 
                 if (!sDroppedMetaId) {
-                    aControls.push(oMetadata); 
+                    // Empty Canvas: Push both items
+                    aItemsToInsert.forEach(function(item) { aControls.push(item); });
                 } else {
-                    var iDroppedIndex = aControls.findIndex(function (c) { return c.id.toString() === sDroppedMetaId; });
-                    var iNewIndex = iDroppedIndex + (sDropPosition === "After" ? 1 : 0);
-                    aControls.splice(iNewIndex, 0, oMetadata);
+                    if (sDropPosition === "On") {
+                        // Dropping directly INSIDE a container
+                        var oTargetNode = this._findNodeById(aControls, sDroppedMetaId);
+                        if (oTargetNode && oTargetNode.controls) {
+                            aItemsToInsert.forEach(function(item) { oTargetNode.controls.push(item); });
+                        }
+                    } else {
+                        // Dropping Before/After an item
+                        var oResult = this._findArrayAndIndex(aControls, sDroppedMetaId);
+                        if (oResult) {
+                            var iNewIndex = oResult.index + (sDropPosition === "After" ? 1 : 0);
+                            
+                            // Splice magic: Injects all items from our array directly into the canvas array at the target index
+                            Array.prototype.splice.apply(oResult.array, [iNewIndex, 0].concat(aItemsToInsert));
+                        }
+                    }
                 }
-            }
-            else {
-                var sDraggedMetaId = getMetaId(oDraggedControl);
-                var sTargetMetaId = sDroppedMetaId;
-
-                if (!sDraggedMetaId || !sTargetMetaId || sDraggedMetaId === sTargetMetaId) return;
-
-                var iDraggedIndex = aControls.findIndex(function (c) { return c.id.toString() === sDraggedMetaId; });
-                var iTargetIndex = aControls.findIndex(function (c) { return c.id.toString() === sTargetMetaId; });
-
-                if (iDraggedIndex === -1 || iTargetIndex === -1) return;
-
-                var iSpliceIndex = iTargetIndex + (sDropPosition === "After" ? 1 : 0);
-                if (iDraggedIndex < iSpliceIndex) {
-                    iSpliceIndex--;
-                }
-
-                var oMovedMetadata = aControls.splice(iDraggedIndex, 1)[0];
-                aControls.splice(iSpliceIndex, 0, oMovedMetadata);
             }
 
             oModel.setProperty("/controls", aControls);
@@ -154,53 +179,110 @@ sap.ui.define([
             this._saveState();
         },
 
+        _buildControlTree: function(oMetadata) {
+            var oInnerControl = ControlFactory.createControl(oMetadata);
+            if (!oInnerControl) return null;
+
+            if (oMetadata.customCssClass) oInnerControl.addStyleClass(oMetadata.customCssClass);
+
+            // Universal Sizing & Interaction Wrapper
+            var oSizingWrapper = new sap.m.VBox({
+                width: oMetadata.width || "100%",
+                height: oMetadata.height || "auto",
+                items: [oInnerControl]
+            });
+
+            if (oMetadata.margin && oMetadata.margin !== "None") oSizingWrapper.addStyleClass("sapUi" + oMetadata.margin + "Margin");
+
+            // Tag for DOM Crawler
+            oSizingWrapper.data("metaId", oMetadata.id.toString());
+            oSizingWrapper.addEventDelegate({ onclick: this.onControlSelect.bind(this, oSizingWrapper) }, this);
+
+            // Make the wrapper draggable and link it to the group
+            oSizingWrapper.addDragDropConfig(new sap.ui.core.dnd.DragInfo({
+                groupName: "uiBuilder"
+            }));
+
+            // ==========================================
+            // DYNAMIC DROP ZONES FOR CONTAINERS
+            // ==========================================
+            if (["Panel", "VBox", "HBox", "SimpleForm"].indexOf(oMetadata.type) > -1) {
+                oInnerControl.addStyleClass("designTimeContainer"); // Visual dashed border
+
+                if (oMetadata.type === "SimpleForm") {
+                    // THE ARCHITECT'S FIX: SimpleForm is a Facade macro-control. Native DnD fails on it.
+                    // We attach the DropInfo to our VBox Wrapper instead to catch the event!
+                    oSizingWrapper.addDragDropConfig(new sap.ui.core.dnd.DropInfo({
+                        targetAggregation: "items", 
+                        dropPosition: "On", // Only allow dropping ON the form wrapper
+                        groupName: "uiBuilder",
+                        drop: this.onDrop.bind(this)
+                    }));
+                } else {
+                    // Standard Containers (Panel, VBox, HBox) work normally
+                    var sAgg = (oMetadata.type === "Panel") ? "content" : "items";
+                    oInnerControl.addDragDropConfig(new sap.ui.core.dnd.DropInfo({
+                        targetAggregation: sAgg,
+                        dropPosition: "OnOrBetween",
+                        groupName: "uiBuilder",
+                        drop: this.onDrop.bind(this)
+                    }));
+                }
+
+                // Recurse deeper and append children safely
+                if (oMetadata.controls) {
+                    oMetadata.controls.forEach(function(childMeta) {
+                        var oChildWrapper = this._buildControlTree(childMeta);
+                        if (oChildWrapper) {
+                            
+                            if (oMetadata.type === "SimpleForm") {
+                                // THE ARCHITECT'S FIX: Restore Form Layout for Wrappers!
+                                // If it's a Label, start a new line (Span 4). Otherwise, place it next to it (Span 8).
+                                var bIsLabel = (childMeta.type === "Label");
+                                
+                                oChildWrapper.setLayoutData(new sap.ui.layout.GridData({
+                                    span: bIsLabel ? "XL4 L4 M4 S12" : "XL8 L8 M8 S12",
+                                    linebreakL: bIsLabel,
+                                    linebreakM: bIsLabel
+                                }));
+                                
+                                oInnerControl.addContent(oChildWrapper);
+                            } 
+                            else if (oMetadata.type === "Panel") {
+                                oInnerControl.addContent(oChildWrapper);
+                            } 
+                            else {
+                                oInnerControl.addItem(oChildWrapper);
+                            }
+                            
+                        }
+                    }.bind(this));
+                }
+            }
+            return oSizingWrapper;
+        },
+
         _renderCanvas: function () {
             var oModel = this.getView().getModel("layout");
             var aControls = oModel.getProperty("/controls") || [];
             var oCanvas = this.byId("canvas");
-
+            
             oCanvas.destroyItems();
 
             if (aControls.length === 0) {
                 var oDropTextItem = new sap.m.CustomListItem({
                     content: [new sap.m.Text({ text: "Drop Controls Here" }).addStyleClass("sapUiMediumMargin")]
-                });
+                }).addStyleClass("canvasListItemClean sapUiNoContentPadding");
                 oCanvas.addItem(oDropTextItem);
                 return;
             }
 
             aControls.forEach(function (oMetadata) {
-                var oControl = ControlFactory.createControl(oMetadata);
-
-                if (oControl) {
-                    oControl.data("metaId", oMetadata.id);
-
-                    var oWrapper = new sap.m.VBox({
-                        width: oMetadata.width || "100%",
-                        height: oMetadata.height || "auto",
-                        items: [oControl]
-                    });
-
-                    if (oMetadata.margin && oMetadata.margin !== "None") {
-                        oWrapper.addStyleClass("sapUi" + oMetadata.margin + "Margin");
-                    }
-                    if (oMetadata.customCssClass) {
-                        oControl.addStyleClass(oMetadata.customCssClass);
-                    }
-                   
-
-                    var oCustomItem = new sap.m.CustomListItem({
-                        content: [oWrapper] 
-                    });
-
-
-                    oCustomItem.addStyleClass("canvasListItem"); 
-                    oCustomItem.data("metaId", oMetadata.id);
-
-                    oCustomItem.addEventDelegate({
-                        onclick: this.onControlSelect.bind(this, oControl)
-                    }, this);
-
+                var oNode = this._buildControlTree(oMetadata);
+                if (oNode) {
+                    var oCustomItem = new sap.m.CustomListItem({ content: [oNode] });
+                    oCustomItem.addStyleClass("canvasListItemClean sapUiNoContentPadding");
+                    oCustomItem.data("metaId", oMetadata.id.toString());
                     oCanvas.addItem(oCustomItem);
                 }
             }.bind(this));
@@ -212,15 +294,21 @@ sap.ui.define([
             var sMetaId = oControl.data("metaId");
             var aControls = this.getView().getModel("layout").getProperty("/controls");
 
-            var oSelectedMetadata = aControls.find(function (c) {
-                return c.id.toString() === sMetaId.toString();
-            });
+            var oSelectedMetadata = this._findNodeById(aControls, sMetaId);
 
+            // var oSelectedMetadata = aControls.find(function (c) {
+            //     return c.id.toString() === sMetaId.toString();
+            // });
             if (oSelectedMetadata) {
-                oSelectedMetadata.ui5Id = oControl.getId();
                 this.getView().getModel("selected").setData(oSelectedMetadata);
                 this._generatePropertiesUI(oSelectedMetadata);
             }
+
+            // if (oSelectedMetadata) {
+            //     oSelectedMetadata.ui5Id = oControl.getId();
+            //     this.getView().getModel("selected").setData(oSelectedMetadata);
+            //     this._generatePropertiesUI(oSelectedMetadata);
+            // }
         },
 
         _generatePropertiesUI: function (oMetadata) {
@@ -273,41 +361,50 @@ sap.ui.define([
 
         onLivePropertyChange: function () {
             var oSelectedData = this.getView().getModel("selected").getData();
+            if (!oSelectedData || !oSelectedData.id) return;
+
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
 
-            var iIndex = aControls.findIndex(function (c) { 
-                return c.id === oSelectedData.id; 
-            });
-            if (iIndex !== -1) {
-                aControls[iIndex] = oSelectedData;
+            // 1. Find the deeply nested control
+            var oResult = this._findArrayAndIndex(aControls, oSelectedData.id);
+            
+            if (oResult) {
+                // 2. THE FIX: Update the specific node with the newly edited data (DO NOT SPLICE/DELETE!)
+                oResult.array[oResult.index] = oSelectedData;
+                
+                // 3. Save and re-render
                 oLayoutModel.setProperty("/controls", aControls);
-                this._renderCanvas();
+                this._renderCanvas(); 
+                this._saveState();
             }
-            this._saveState();
         },
 
         onDeleteSelectedControl: function () {
             var oSelectedData = this.getView().getModel("selected").getData();
             if (!oSelectedData || !oSelectedData.id) {
                 sap.m.MessageToast.show("Please select a control first.");
-                this._saveState();
                 return;
             }
 
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
 
-            var aUpdatedControls = aControls.filter(function (oControlData) {
-                return oControlData.id !== oSelectedData.id;
-            });
+            // THE ARCHITECT'S FIX: Use the recursive crawler to find exactly where the control lives
+            var oResult = this._findArrayAndIndex(aControls, oSelectedData.id);
+            
+            if (oResult) {
+                // Splice it out of whichever nested array it belongs to
+                oResult.array.splice(oResult.index, 1);
+                
+                oLayoutModel.setProperty("/controls", aControls);
+                this.getView().getModel("selected").setData({});
+                this.byId("propertiesContainer").destroyItems();
 
-            oLayoutModel.setProperty("/controls", aUpdatedControls);
-            this.getView().getModel("selected").setData({});
-            this.byId("propertiesContainer").destroyItems();
-
-            this._renderCanvas();
-            sap.m.MessageToast.show("Control deleted successfully.");
+                this._renderCanvas();
+                sap.m.MessageToast.show("Control deleted successfully.");
+                this._saveState();
+            }
         },
 
         onOpenDataConfig: function () {
@@ -326,11 +423,12 @@ sap.ui.define([
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
 
-            var iIndex = aControls.findIndex(function (c) { 
-                return c.id === oEditedData.id; 
-            });
-            if (iIndex !== -1) {
-                aControls[iIndex] = oEditedData;
+            // THE ARCHITECT'S FIX: Use recursive search to find the nested Table/List
+            var oResult = this._findArrayAndIndex(aControls, oEditedData.id);
+            
+            if (oResult) {
+                // Overwrite the old metadata with the newly configured data
+                oResult.array[oResult.index] = oEditedData;
                 oLayoutModel.setProperty("/controls", aControls);
             }
 
@@ -538,14 +636,70 @@ sap.ui.define([
             sap.m.MessageToast.show(sControlType + " data imported successfully!");
         },
 
+        _buildPreviewTree: function(oMetadata) {
+            // 1. Build the raw control
+            var oControl = ControlFactory.createControl(oMetadata);
+            if (!oControl) return null;
+
+            // 2. Apply styling and margins natively (no wrappers)
+            if (oMetadata.customCssClass) {
+                oControl.addStyleClass(oMetadata.customCssClass);
+            }
+            if (oMetadata.margin && oMetadata.margin !== "None") {
+                oControl.addStyleClass("sapUi" + oMetadata.margin + "Margin");
+            }
+            if (oMetadata.width && oControl.setWidth) {
+                try { oControl.setWidth(oMetadata.width); } catch (e) {}
+            }
+
+            // 3. RECURSION: If it is a container, build its children!
+            if (["Panel", "VBox", "HBox", "SimpleForm"].indexOf(oMetadata.type) > -1 && oMetadata.controls) {
+                oMetadata.controls.forEach(function(childMeta) {
+                    var oChildControl = this._buildPreviewTree(childMeta);
+                    if (oChildControl) {
+                        
+                        // THE ARCHITECT'S FIX: Apply Form GridData directly to the raw preview controls
+                        if (oMetadata.type === "SimpleForm") {
+                            var bIsLabel = (childMeta.type === "Label");
+                            
+                            oChildControl.setLayoutData(new sap.ui.layout.GridData({
+                                span: bIsLabel ? "XL4 L4 M4 S12" : "XL8 L8 M8 S12",
+                                linebreakL: bIsLabel,
+                                linebreakM: bIsLabel
+                            }));
+                            
+                            oControl.addContent(oChildControl);
+                        } 
+                        else if (oMetadata.type === "Panel") {
+                            oControl.addContent(oChildControl);
+                        } 
+                        else {
+                            oControl.addItem(oChildControl);
+                        }
+                        
+                    }
+                }.bind(this));
+            }
+
+            return oControl;
+        },
+
         onPreview: function () {
+            var oModel = this.getView().getModel("layout");
+            var aControls = oModel.getProperty("/controls") || [];
             var oPreviewCanvas = this.byId("previewCanvas");
-            var aControls = this.getView().getModel("layout").getProperty("/controls");
+            
+            // Clear the old preview
             oPreviewCanvas.destroyItems();
-            aControls.forEach(function (oData) {
-                var oControl = ControlFactory.createControl(oData);
-                if (oControl) oPreviewCanvas.addItem(oControl);
-            });
+
+            // Recursively build the pure UI
+            aControls.forEach(function (oMetadata) {
+                var oNode = this._buildPreviewTree(oMetadata);
+                if (oNode) {
+                    oPreviewCanvas.addItem(oNode);
+                }
+            }.bind(this));
+
             this.byId("previewDialog").open();
         },
         onClosePreview: function () { this.byId("previewDialog").close(); },

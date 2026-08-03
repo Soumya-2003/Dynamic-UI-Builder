@@ -7,8 +7,9 @@ sap.ui.define([
     "sap/m/List",
     "sap/m/StandardListItem",
     "sap/m/Tree",
-    "sap/m/StandardTreeItem"
-], function (Table, Column, ColumnListItem, Label, Text, List, StandardListItem, Tree, StandardTreeItem) {
+    "sap/m/StandardTreeItem",
+    "sap/ui/layout/form/SimpleForm"
+], function (Table, Column, ColumnListItem, Label, Text, List, StandardListItem, Tree, StandardTreeItem, SimpleForm) {
     "use strict";
 
     return {
@@ -215,6 +216,27 @@ sap.ui.define([
                             parameters: { arrayNames: ["nodes"] }
                         });
                     }
+                    break;
+
+                case "Panel": 
+                    oControl = new sap.m.Panel({ 
+                        headerText: oMetadata.headerText || "Panel",
+                        expandable: true,
+                        expanded: true
+                    }); 
+                    break;
+                case "VBox": 
+                    oControl = new sap.m.VBox(); 
+                    break;
+                case "HBox": 
+                    oControl = new sap.m.HBox(); 
+                    break;
+                case "SimpleForm":
+                    oControl = new SimpleForm({
+                        title: oMetadata.headerText || "Form",
+                        layout: "ResponsiveGridLayout",
+                        editable: true
+                    });
                     break;
 
                 case "Button": oControl = new sap.m.Button(); break;
