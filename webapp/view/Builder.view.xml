@@ -245,35 +245,64 @@
                 width="60%"
                 class="sapUiSmallMargin"
             >
-                <Title text="Canvas" />
                 <Panel
                     width="100%"
-                    height="500px"
+                    height="600px"
                 >
-                    <List
-                        id="canvas"
-                        width="100%"
-                        mode="None"
-                        class="sapUiNoContentPadding flexCanvasList"
-                    >
-                        <dragDropConfig>
-                            <dnd:DragInfo sourceAggregation="items" />
-                            <dnd:DropInfo
-                                targetAggregation="items"
-                                dropPosition="Between"
-                                drop="onDrop"
-                            />
-                        </dragDropConfig>
-                        <items>
-                            <CustomListItem id="dropTextItem">
-                                <Text
-                                    id="dropText"
-                                    text="Drop Controls Here"
-                                    class="sapUiMediumMargin"
+                <headerToolbar>
+                    <Toolbar>
+                        <Title text="Canvas Viewport" />
+                        <ToolbarSpacer />
+                        <SegmentedButton
+                            selectedKey="100%"
+                            selectionChange="onDeviceSwitch"
+                        >
+                            <items>
+                                <SegmentedButtonItem
+                                    key="100%"
+                                    icon="sap-icon://sys-monitor"
+                                    tooltip="Desktop (100%)"
                                 />
-                            </CustomListItem>
-                        </items>
-                    </List>
+                                <SegmentedButtonItem
+                                    key="768px"
+                                    icon="sap-icon://ipad"
+                                    tooltip="Tablet (768px)"
+                                />
+                                <SegmentedButtonItem
+                                    key="375px"
+                                    icon="sap-icon://iphone"
+                                    tooltip="Mobile (375px)"
+                                />
+                            </items>
+                        </SegmentedButton>
+                    </Toolbar>
+                </headerToolbar>
+                
+                <List
+                    id="canvas"
+                    width="100%"
+                    mode="None"
+                    showSeparators="None"
+                    class="sapUiNoContentPadding"
+                >
+                    <dragDropConfig>
+                        <dnd:DragInfo sourceAggregation="items" />
+                        <dnd:DropInfo
+                            targetAggregation="items"
+                            dropPosition="Between"
+                            drop="onDrop"
+                        />
+                    </dragDropConfig>
+                    <items>
+                        <CustomListItem id="dropTextItem">
+                            <Text
+                                id="dropText"
+                                text="Drop Controls Here"
+                                class="sapUiMediumMargin"
+                            />
+                        </CustomListItem>
+                    </items>
+                </List>
                 </Panel>
             </VBox>
 
@@ -654,37 +683,79 @@
                                 </Table>
                             </IconTabFilter>
 
-                            <IconTabFilter text="Custom Actions" icon="sap-icon://syntax" visible="{= ${dialog>/enableCustomActions} }">
-                                <Table items="{dialog>/customActions}" mode="Delete" delete="onDeleteCustomAction">
+                            <IconTabFilter
+                                text="Custom Actions"
+                                icon="sap-icon://syntax"
+                                visible="{= ${dialog>/enableCustomActions} }"
+                            >
+                                <Table
+                                    items="{dialog>/customActions}"
+                                    mode="Delete"
+                                    delete="onDeleteCustomAction"
+                                >
                                     <headerToolbar>
                                         <Toolbar>
-                                            <Title text="Define Custom Buttons &amp; Logic"/>
-                                            <ToolbarSpacer/>
-                                            <Button icon="sap-icon://add" text="Add Action" press="onAddCustomAction"/>
+                                            <Title
+                                                text="Define Custom Buttons &amp; Logic"
+                                            />
+                                            <ToolbarSpacer />
+                                            <Button
+                                                icon="sap-icon://add"
+                                                text="Add Action"
+                                                press="onAddCustomAction"
+                                            />
                                         </Toolbar>
                                     </headerToolbar>
                                     <columns>
-                                        <Column width="150px"><Text text="Button Label"/></Column>
-                                        <Column width="150px"><Text text="Icon URL"/></Column>
-                                        <Column width="150px"><Text text="Button Type"/></Column>
-                                        <Column><Text text="JavaScript Logic"/></Column>
+                                        <Column width="150px">
+                                            <Text text="Button Label" />
+                                        </Column>
+                                        <Column width="150px">
+                                            <Text text="Icon URL" />
+                                        </Column>
+                                        <Column width="150px">
+                                            <Text text="Button Type" />
+                                        </Column>
+                                        <Column>
+                                            <Text text="JavaScript Logic" />
+                                        </Column>
                                     </columns>
                                     <items>
                                         <ColumnListItem>
                                             <cells>
-                                                <Input value="{dialog>label}" placeholder="e.g. Approve" />
-                                                <Input value="{dialog>icon}" placeholder="sap-icon://..." />
-                                                <Select selectedKey="{dialog>buttonType}">
-                                                    <core:Item key="Default" text="Default (Gray)"/>
-                                                    <core:Item key="Emphasized" text="Emphasized (Blue)"/>
-                                                    <core:Item key="Accept" text="Accept (Green)"/>
-                                                    <core:Item key="Reject" text="Reject (Red)"/>
+                                                <Input
+                                                    value="{dialog>label}"
+                                                    placeholder="e.g. Approve"
+                                                />
+                                                <Input
+                                                    value="{dialog>icon}"
+                                                    placeholder="sap-icon://..."
+                                                />
+                                                <Select
+                                                    selectedKey="{dialog>buttonType}"
+                                                >
+                                                    <core:Item
+                                                        key="Default"
+                                                        text="Default (Gray)"
+                                                    />
+                                                    <core:Item
+                                                        key="Emphasized"
+                                                        text="Emphasized (Blue)"
+                                                    />
+                                                    <core:Item
+                                                        key="Accept"
+                                                        text="Accept (Green)"
+                                                    />
+                                                    <core:Item
+                                                        key="Reject"
+                                                        text="Reject (Red)"
+                                                    />
                                                 </Select>
-                                                <Button 
-                                                    text="Edit JS Logic" 
-                                                    icon="sap-icon://syntax" 
-                                                    type="Emphasized" 
-                                                    press="onOpenCodeEditor" 
+                                                <Button
+                                                    text="Edit JS Logic"
+                                                    icon="sap-icon://syntax"
+                                                    type="Emphasized"
+                                                    press="onOpenCodeEditor"
                                                 />
                                             </cells>
                                         </ColumnListItem>
@@ -769,16 +840,26 @@
                                     />
                                     <Switch state="{dialog>/enableSearch}" />
 
-                                    <Label
+                                    <!-- <Label
                                         text="Enable Action Column (Edit/Delete)"
                                     />
-                                    <Switch state="{dialog>/enableActions}" />
+                                    <Switch state="{dialog>/enableActions}" /> -->
 
-                                    <Label text="Enable Custom Actions (Write JS)" />
-                                    <Switch state="{dialog>/enableCustomActions}" />
+                                    <Label
+                                        text="Enable Custom Actions (Write JS)"
+                                    />
+                                    <Switch
+                                        state="{dialog>/enableCustomActions}"
+                                    />
 
-                                    <Label text="Custom Actions Column Name" visible="{= ${dialog>/enableCustomActions} }" />
-                                    <Input value="{dialog>/customActionsHeader}" visible="{= ${dialog>/enableCustomActions} }" />
+                                    <Label
+                                        text="Custom Actions Column Name"
+                                        visible="{= ${dialog>/enableCustomActions} }"
+                                    />
+                                    <Input
+                                        value="{dialog>/customActionsHeader}"
+                                        visible="{= ${dialog>/enableCustomActions} }"
+                                    />
 
                                     <Label text="Sticky Header" />
                                     <Switch state="{dialog>/stickyHeader}" />
@@ -864,8 +945,15 @@
                 resizable="true"
             >
                 <content>
-                    <VBox class="sapUiMediumMargin" width="100%" height="100%">
-                        <Text text="Write your custom JavaScript logic below. You have access to the current row object via 'rowData'." class="sapUiTinyMarginBottom" />
+                    <VBox
+                        class="sapUiMediumMargin"
+                        width="100%"
+                        height="100%"
+                    >
+                        <Text
+                            text="Write your custom JavaScript logic below. You have access to the current row object via 'rowData'."
+                            class="sapUiTinyMarginBottom"
+                        />
                         <TextArea
                             id="codeEditorArea"
                             value="{dialog>/currentActionLogic}"
@@ -899,6 +987,16 @@
 
         <footer>
             <OverflowToolbar>
+                <Button
+                    icon="sap-icon://undo"
+                    tooltip="Undo (Ctrl+Z)"
+                    press="onUndo"
+                />
+                <Button
+                    icon="sap-icon://redo"
+                    tooltip="Redo (Ctrl+Y)"
+                    press="onRedo"
+                />
                 <ToolbarSpacer />
                 <Button
                     text="Live Preview"
