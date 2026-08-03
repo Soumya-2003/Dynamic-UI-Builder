@@ -33,7 +33,6 @@ sap.ui.define([
                                 var sQuery = oEvent.getParameter("newValue").toLowerCase();
                                 var aItems = oControl.getItems();
 
-                                // Universal DOM filter: Checks every cell in the row
                                 aItems.forEach(function (oItem) {
                                     var bMatch = false;
                                     oItem.getCells().forEach(function (oCell) {
@@ -45,7 +44,7 @@ sap.ui.define([
                                             bMatch = true;
                                         }
                                     });
-                                    oItem.setVisible(bMatch); // Hide/Show row natively
+                                    oItem.setVisible(bMatch); 
                                 });
                             }
                         });
@@ -61,7 +60,6 @@ sap.ui.define([
                         oControl.setHeaderText(oMetadata.headerText || "Table");
                     }
 
-                    // 1. DYNAMIC COLUMNS (Single Loop)
                     if (oMetadata.columns) {
                         oMetadata.columns.forEach(function (col) {
                             oControl.addColumn(new Column({
@@ -87,7 +85,6 @@ sap.ui.define([
                         }));
                     }
 
-                    // 2. SORTING ENGINE
                     var aRowsToRender = oMetadata.rows ? oMetadata.rows.slice() : [];
 
                     if (oMetadata.sortBy && oMetadata.sortBy !== "None") {
@@ -101,12 +98,10 @@ sap.ui.define([
                         });
                     }
 
-                    // 3. DYNAMIC ROWS (Single Loop)
                     if (aRowsToRender.length > 0) {
                         aRowsToRender.forEach(function (rowData) {
                             var aCells = [];
 
-                            // Standard Data Cells
                             if (oMetadata.columns) {
                                 oMetadata.columns.forEach(function (col, index) {
                                     var sKey = "col" + (index + 1);
