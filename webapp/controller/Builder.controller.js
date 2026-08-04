@@ -38,7 +38,6 @@ sap.ui.define([
         _findArrayAndIndex: function (aNodes, sId) {
             for (var i = 0; i < aNodes.length; i++) {
                 if (aNodes[i].id.toString() === sId.toString()) return { array: aNodes, index: i };
-                // If this node has a controls array, search deeper!
                 if (aNodes[i].controls) {
                     var oResult = this._findArrayAndIndex(aNodes[i].controls, sId);
                     if (oResult) return oResult;
@@ -55,9 +54,9 @@ sap.ui.define([
         onDeviceSwitch: function (oEvent) {
             var sWidth = oEvent.getParameter("item").getKey();
             var oCanvas = this.byId("canvas");
-            
+
             oCanvas.setWidth(sWidth);
-            
+
             if (sWidth !== "100%") {
                 oCanvas.addStyleClass("sapUiAutoMarginLeft").addStyleClass("sapUiAutoMarginRight");
             } else {
@@ -70,11 +69,11 @@ sap.ui.define([
             this._stateTimeout = setTimeout(function () {
                 var aControls = this.getView().getModel("layout").getProperty("/controls");
                 var sState = JSON.stringify(aControls || []);
-                
-                
+
+
                 if (this._aHistoryStack[this._aHistoryStack.length - 1] !== sState) {
                     this._aHistoryStack.push(sState);
-                    this._aRedoStack = []; 
+                    this._aRedoStack = [];
                 }
             }.bind(this), 500);
         },
@@ -82,11 +81,11 @@ sap.ui.define([
         onUndo: function () {
             if (this._aHistoryStack.length > 1) {
                 var sCurrentState = this._aHistoryStack.pop();
-                this._aRedoStack.push(sCurrentState); 
-                
+                this._aRedoStack.push(sCurrentState);
+
                 var sPreviousState = this._aHistoryStack[this._aHistoryStack.length - 1];
                 this.getView().getModel("layout").setProperty("/controls", JSON.parse(sPreviousState));
-                
+
                 this.getView().getModel("selected").setData({});
                 this.byId("propertiesContainer").destroyItems();
                 this._renderCanvas();
@@ -99,10 +98,10 @@ sap.ui.define([
         onRedo: function () {
             if (this._aRedoStack.length > 0) {
                 var sNextState = this._aRedoStack.pop();
-                this._aHistoryStack.push(sNextState); 
-                
+                this._aHistoryStack.push(sNextState);
+
                 this.getView().getModel("layout").setProperty("/controls", JSON.parse(sNextState));
-                
+
                 this.getView().getModel("selected").setData({});
                 this.byId("propertiesContainer").destroyItems();
                 this._renderCanvas();
@@ -133,9 +132,9 @@ sap.ui.define([
 
             if (oDraggedControl.isA("sap.m.StandardListItem")) {
                 var oMetadata = ControlMetadataFactory.getMetadata(oDraggedControl.getTitle());
-                
+
                 if (!sDroppedMetaId) {
-                    aControls.push(oMetadata); 
+                    aControls.push(oMetadata);
                 } else {
                     if (sDropPosition === "On") {
                         var oTargetNode = this._findNodeById(aControls, sDroppedMetaId);
@@ -155,32 +154,29 @@ sap.ui.define([
             this._saveState();
         },
 
-        _buildControlTree: function(oMetadata) {
+        _buildControlTree: function (oMetadata) {
             var oInnerControl = ControlFactory.createControl(oMetadata);
             if (!oInnerControl) return null;
 
             if (oMetadata.customCssClass) oInnerControl.addStyleClass(oMetadata.customCssClass);
 
-            // 1. EXACT SIZING: Applied directly to the control (No margins here = no overflow!)
-            if (oInnerControl.setWidth) { 
-                try { oInnerControl.setWidth(oMetadata.width || "100%"); } catch (e) {} 
+            if (oInnerControl.setWidth) {
+                try { oInnerControl.setWidth(oMetadata.width || "100%"); } catch (e) { }
             }
 
-            // 2. THE MASTER WRAPPER: VBox handles horizontal alignment flawlessly via 'alignItems'
             var oSizingWrapper = new sap.m.VBox({
-                width: "auto", // Prevents margin overflow
+                width: "auto",
                 height: oMetadata.height || "auto",
-                alignItems: oMetadata.hAlign || "Start", // Left, Center, or Right
-                layoutData: new sap.m.FlexItemData({ growFactor: 1 }), // Stretches to fill available screen perfectly
+                alignItems: oMetadata.hAlign || "Start",
+                layoutData: new sap.m.FlexItemData({ growFactor: 1 }),
                 items: [oInnerControl]
             });
 
-            // 3. MARGINS: Applied safely to the wrapper so Flexbox absorbs them
+            // Margins applied safely to the wrapper so Flexbox absorbs them
             if (oMetadata.margin && oMetadata.margin !== "None") {
                 oSizingWrapper.addStyleClass("sapUi" + oMetadata.margin + "Margin");
             }
 
-            // Tag for DOM Crawler
             oSizingWrapper.data("metaId", oMetadata.id.toString());
             oSizingWrapper.addEventDelegate({ onclick: this.onControlSelect.bind(this, oSizingWrapper) }, this);
 
@@ -191,11 +187,11 @@ sap.ui.define([
 
             // Dynamic Drop Zones for Containers
             if (["Panel", "VBox", "HBox", "SimpleForm"].indexOf(oMetadata.type) > -1) {
-                oInnerControl.addStyleClass("designTimeContainer"); 
+                oInnerControl.addStyleClass("designTimeContainer");
 
                 if (oMetadata.type === "SimpleForm") {
                     oSizingWrapper.addDragDropConfig(new sap.ui.core.dnd.DropInfo({
-                        targetAggregation: "items", 
+                        targetAggregation: "items",
                         dropPosition: "On",
                         groupName: "uiBuilder",
                         drop: this.onDrop.bind(this)
@@ -212,22 +208,21 @@ sap.ui.define([
 
                 // Recurse deeper
                 if (oMetadata.controls) {
-                    oMetadata.controls.forEach(function(childMeta) {
+                    oMetadata.controls.forEach(function (childMeta) {
                         var oChildWrapper = this._buildControlTree(childMeta);
                         if (oChildWrapper) {
                             if (oMetadata.type === "SimpleForm") {
                                 var bIsLabel = (childMeta.type === "Label");
-                                // This GridData gracefully overwrites the FlexItemData above!
                                 oChildWrapper.setLayoutData(new sap.ui.layout.GridData({
                                     span: bIsLabel ? "XL4 L4 M4 S12" : "XL8 L8 M8 S12",
                                     linebreakL: bIsLabel,
                                     linebreakM: bIsLabel
                                 }));
                                 oInnerControl.addContent(oChildWrapper);
-                            } 
+                            }
                             else if (oMetadata.type === "Panel") {
                                 oInnerControl.addContent(oChildWrapper);
-                            } 
+                            }
                             else {
                                 oInnerControl.addItem(oChildWrapper);
                             }
@@ -242,7 +237,7 @@ sap.ui.define([
             var oModel = this.getView().getModel("layout");
             var aControls = oModel.getProperty("/controls") || [];
             var oCanvas = this.byId("canvas");
-            
+
             oCanvas.destroyItems();
 
             if (aControls.length === 0) {
@@ -290,7 +285,13 @@ sap.ui.define([
         _generatePropertiesUI: function (oMetadata) {
             var oContainer = this.byId("propertiesContainer");
             oContainer.destroyItems();
-            var aIgnoredKeys = ["id", "type", "ui5Id"];
+            var aIgnoredKeys = [
+                "id", "type", "ui5Id",
+                "columns", "rows", "items", "flatNodes", "customActions",
+                "sortBy", "sortOrder", "enableSearch", "showSearch",
+                "enableCustomActions", "customActionsHeader", "inlineEditing",
+                "stickyHeader", "alternateRowColors", "selectionMode"
+            ];
 
             Object.keys(oMetadata).forEach(function (sKey) {
                 if (aIgnoredKeys.indexOf(sKey) !== -1) return;
@@ -353,16 +354,14 @@ sap.ui.define([
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
 
-            // 1. Find the deeply nested control
             var oResult = this._findArrayAndIndex(aControls, oSelectedData.id);
-            
+
             if (oResult) {
-                // 2. THE FIX: Update the specific node with the newly edited data (DO NOT SPLICE/DELETE!)
                 oResult.array[oResult.index] = oSelectedData;
-                
-                // 3. Save and re-render
+
+                // Save and re-render
                 oLayoutModel.setProperty("/controls", aControls);
-                this._renderCanvas(); 
+                this._renderCanvas();
                 this._saveState();
             }
         },
@@ -377,13 +376,11 @@ sap.ui.define([
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
 
-            // THE ARCHITECT'S FIX: Use the recursive crawler to find exactly where the control lives
             var oResult = this._findArrayAndIndex(aControls, oSelectedData.id);
-            
+
             if (oResult) {
-                // Splice it out of whichever nested array it belongs to
                 oResult.array.splice(oResult.index, 1);
-                
+
                 oLayoutModel.setProperty("/controls", aControls);
                 this.getView().getModel("selected").setData({});
                 this.byId("propertiesContainer").destroyItems();
@@ -410,11 +407,10 @@ sap.ui.define([
             var oLayoutModel = this.getView().getModel("layout");
             var aControls = oLayoutModel.getProperty("/controls");
 
-            // THE ARCHITECT'S FIX: Use recursive search to find the nested Table/List
+            // Recursive search to find the nested Table/List
             var oResult = this._findArrayAndIndex(aControls, oEditedData.id);
-            
+
             if (oResult) {
-                // Overwrite the old metadata with the newly configured data
                 oResult.array[oResult.index] = oEditedData;
                 oLayoutModel.setProperty("/controls", aControls);
             }
@@ -498,7 +494,7 @@ sap.ui.define([
             oDialogModel.setProperty("/flatNodes", aNodes);
         },
 
-        
+
         onAddColumn: function () {
             var oDialogModel = this.getView().getModel("dialog");
             var aColumns = oDialogModel.getProperty("/columns") || [];
@@ -623,18 +619,16 @@ sap.ui.define([
             sap.m.MessageToast.show(sControlType + " data imported successfully!");
         },
 
-        _buildPreviewTree: function(oMetadata) {
+        _buildPreviewTree: function (oMetadata) {
             var oInnerControl = ControlFactory.createControl(oMetadata);
             if (!oInnerControl) return null;
 
             if (oMetadata.customCssClass) oInnerControl.addStyleClass(oMetadata.customCssClass);
 
-            // 1. EXACT SIZING
-            if (oInnerControl.setWidth) { 
-                try { oInnerControl.setWidth(oMetadata.width || "100%"); } catch (e) {} 
+            if (oInnerControl.setWidth) {
+                try { oInnerControl.setWidth(oMetadata.width || "100%"); } catch (e) { }
             }
 
-            // 2. MASTER PREVIEW WRAPPER
             var oPreviewWrapper = new sap.m.VBox({
                 width: "auto",
                 height: oMetadata.height || "auto",
@@ -643,14 +637,13 @@ sap.ui.define([
                 items: [oInnerControl]
             });
 
-            // 3. MARGINS
+            // Margins
             if (oMetadata.margin && oMetadata.margin !== "None") {
                 oPreviewWrapper.addStyleClass("sapUi" + oMetadata.margin + "Margin");
             }
 
-            // RECURSION
             if (["Panel", "VBox", "HBox", "SimpleForm"].indexOf(oMetadata.type) > -1 && oMetadata.controls) {
-                oMetadata.controls.forEach(function(childMeta) {
+                oMetadata.controls.forEach(function (childMeta) {
                     var oChildWrapper = this._buildPreviewTree(childMeta);
                     if (oChildWrapper) {
                         if (oMetadata.type === "SimpleForm") {
@@ -661,10 +654,10 @@ sap.ui.define([
                                 linebreakM: bIsLabel
                             }));
                             oInnerControl.addContent(oChildWrapper);
-                        } 
+                        }
                         else if (oMetadata.type === "Panel") {
                             oInnerControl.addContent(oChildWrapper);
-                        } 
+                        }
                         else {
                             oInnerControl.addItem(oChildWrapper);
                         }
@@ -679,7 +672,7 @@ sap.ui.define([
             var oModel = this.getView().getModel("layout");
             var aControls = oModel.getProperty("/controls") || [];
             var oPreviewCanvas = this.byId("previewCanvas");
-            
+
             // Clear the old preview
             oPreviewCanvas.destroyItems();
 
