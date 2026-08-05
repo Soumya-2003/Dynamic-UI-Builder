@@ -25,7 +25,25 @@ sap.ui.define([], function () {
         onAddCustomAction: function (oController) {
             var oDialogModel = oController.getView().getModel("dialog");
             var aActions = oDialogModel.getProperty("/customActions") || [];
-            aActions.push({ actionId: "act_" + Date.now().toString().slice(-4), label: "New Action", icon: "sap-icon://action", buttonType: "Default", logic: "sap.m.MessageToast.show('You clicked ' + rowData.rowId);" });
+       
+            var sControlType = oDialogModel.getProperty("/type");
+            
+            var sDefaultLogic = "sap.m.MessageToast.show('You clicked ' + rowData.rowId);"; 
+            
+            if (sControlType === "List") {
+                sDefaultLogic = "sap.m.MessageToast.show('You clicked ' + rowData.itemId);";
+            } else if (sControlType === "Tree") {
+                sDefaultLogic = "sap.m.MessageToast.show('You clicked ' + rowData.nodeId);";
+            }
+
+            aActions.push({ 
+                actionId: "act_" + Date.now().toString().slice(-4), 
+                label: "New Action", 
+                icon: "sap-icon://action", 
+                buttonType: "Default", 
+                logic: sDefaultLogic 
+            });
+            
             oDialogModel.setProperty("/customActions", aActions);
         },
         onDeleteCustomAction: function (oController, oEvent) {
