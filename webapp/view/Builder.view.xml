@@ -4,6 +4,7 @@
     xmlns="sap.m"
     xmlns:dnd="sap.ui.core.dnd"
     xmlns:core="sap.ui.core"
+    xmlns:form="sap.ui.layout.form"
 >
     <Page
         id="page"
@@ -22,12 +23,14 @@
                     expandable="true"
                     expanded="true"
                     headerText="Input Controls"
-                    width="auto"
                     class="sapUiNoContentPadding"
                 >
                     <List>
                         <dragDropConfig>
-                            <dnd:DragInfo sourceAggregation="items" />
+                            <dnd:DragInfo
+                                sourceAggregation="items"
+                                groupName="uiBuilder"
+                            />
                         </dragDropConfig>
                         <StandardListItem
                             title="Input"
@@ -64,12 +67,14 @@
                     expandable="true"
                     expanded="false"
                     headerText="Action Controls"
-                    width="auto"
                     class="sapUiNoContentPadding"
                 >
                     <List>
                         <dragDropConfig>
-                            <dnd:DragInfo sourceAggregation="items" />
+                            <dnd:DragInfo
+                                sourceAggregation="items"
+                                groupName="uiBuilder"
+                            />
                         </dragDropConfig>
                         <StandardListItem
                             title="Button"
@@ -90,12 +95,14 @@
                     expandable="true"
                     expanded="false"
                     headerText="Selection Controls"
-                    width="auto"
                     class="sapUiNoContentPadding"
                 >
                     <List>
                         <dragDropConfig>
-                            <dnd:DragInfo sourceAggregation="items" />
+                            <dnd:DragInfo
+                                sourceAggregation="items"
+                                groupName="uiBuilder"
+                            />
                         </dragDropConfig>
                         <StandardListItem
                             title="CheckBox"
@@ -124,12 +131,14 @@
                     expandable="true"
                     expanded="false"
                     headerText="Display Controls"
-                    width="auto"
                     class="sapUiNoContentPadding"
                 >
                     <List>
                         <dragDropConfig>
-                            <dnd:DragInfo sourceAggregation="items" />
+                            <dnd:DragInfo
+                                sourceAggregation="items"
+                                groupName="uiBuilder"
+                            />
                         </dragDropConfig>
                         <StandardListItem
                             title="Label"
@@ -158,12 +167,14 @@
                     expandable="true"
                     expanded="false"
                     headerText="Container Controls"
-                    width="auto"
                     class="sapUiNoContentPadding"
                 >
                     <List>
                         <dragDropConfig>
-                            <dnd:DragInfo sourceAggregation="items" />
+                            <dnd:DragInfo
+                                sourceAggregation="items"
+                                groupName="uiBuilder"
+                            />
                         </dragDropConfig>
                         <StandardListItem
                             title="Panel"
@@ -188,12 +199,14 @@
                     expandable="true"
                     expanded="false"
                     headerText="Data Controls"
-                    width="auto"
                     class="sapUiNoContentPadding"
                 >
                     <List>
                         <dragDropConfig>
-                            <dnd:DragInfo sourceAggregation="items" />
+                            <dnd:DragInfo
+                                sourceAggregation="items"
+                                groupName="uiBuilder"
+                            />
                         </dragDropConfig>
                         <StandardListItem
                             title="Table"
@@ -214,12 +227,14 @@
                     expandable="true"
                     expanded="false"
                     headerText="Advanced Controls"
-                    width="auto"
                     class="sapUiNoContentPadding"
                 >
                     <List>
                         <dragDropConfig>
-                            <dnd:DragInfo sourceAggregation="items" />
+                            <dnd:DragInfo
+                                sourceAggregation="items"
+                                groupName="uiBuilder"
+                            />
                         </dragDropConfig>
                         <StandardListItem
                             title="Slider"
@@ -249,60 +264,66 @@
                     width="100%"
                     height="600px"
                 >
-                <headerToolbar>
-                    <Toolbar>
-                        <Title text="Canvas Viewport" />
-                        <ToolbarSpacer />
-                        <SegmentedButton
-                            selectedKey="100%"
-                            selectionChange="onDeviceSwitch"
-                        >
-                            <items>
-                                <SegmentedButtonItem
-                                    key="100%"
-                                    icon="sap-icon://sys-monitor"
-                                    tooltip="Desktop (100%)"
-                                />
-                                <SegmentedButtonItem
-                                    key="768px"
-                                    icon="sap-icon://ipad"
-                                    tooltip="Tablet (768px)"
-                                />
-                                <SegmentedButtonItem
-                                    key="375px"
-                                    icon="sap-icon://iphone"
-                                    tooltip="Mobile (375px)"
-                                />
-                            </items>
-                        </SegmentedButton>
-                    </Toolbar>
-                </headerToolbar>
-                
-                <List
-                    id="canvas"
-                    width="100%"
-                    mode="None"
-                    showSeparators="None"
-                    class="sapUiNoContentPadding"
-                >
-                    <dragDropConfig>
-                        <dnd:DragInfo sourceAggregation="items" />
-                        <dnd:DropInfo
-                            targetAggregation="items"
-                            dropPosition="Between"
-                            drop="onDrop"
-                        />
-                    </dragDropConfig>
-                    <items>
-                        <CustomListItem id="dropTextItem">
-                            <Text
-                                id="dropText"
-                                text="Drop Controls Here"
-                                class="sapUiMediumMargin"
+                    <headerToolbar>
+                        <Toolbar>
+                            <Title text="Canvas Viewport" />
+                            <ToolbarSpacer />
+                            <SegmentedButton
+                                selectedKey="100%"
+                                selectionChange="onDeviceSwitch"
+                            >
+                                <items>
+                                    <SegmentedButtonItem
+                                        key="100%"
+                                        icon="sap-icon://sys-monitor"
+                                        tooltip="Desktop (100%)"
+                                    />
+                                    <SegmentedButtonItem
+                                        key="768px"
+                                        icon="sap-icon://ipad"
+                                        tooltip="Tablet (768px)"
+                                    />
+                                    <SegmentedButtonItem
+                                        key="375px"
+                                        icon="sap-icon://iphone"
+                                        tooltip="Mobile (375px)"
+                                    />
+                                </items>
+                            </SegmentedButton>
+                        </Toolbar>
+                    </headerToolbar>
+
+                    <List
+                        id="canvas"
+                        width="100%"
+                        mode="None"
+                        showSeparators="None"
+                        class="sapUiNoContentPadding flexCanvasList"
+                    >
+                        <dragDropConfig>
+                            <dnd:DragInfo
+                                sourceAggregation="items"
+                                groupName="uiBuilder"
                             />
-                        </CustomListItem>
-                    </items>
-                </List>
+                            <dnd:DropInfo
+                                targetAggregation="items"
+                                dropPosition="OnOrBetween"
+                                groupName="uiBuilder"
+                                drop="onDrop"
+                            />
+                        </dragDropConfig>
+                        <items>
+                            <CustomListItem
+                                id="dropTextItem"
+                                class="sapUiNoContentPadding"
+                            >
+                                <Text
+                                    text="Drop Controls Here"
+                                    class="sapUiMediumMargin"
+                                />
+                            </CustomListItem>
+                        </items>
+                    </List>
                 </Panel>
             </VBox>
 
@@ -314,6 +335,7 @@
                     text="Properties"
                     class="sapUiTinyMarginBottom"
                 />
+
                 <ScrollContainer
                     height="400px"
                     vertical="true"
@@ -342,7 +364,7 @@
                     icon="sap-icon://delete"
                     type="Reject"
                     width="100%"
-                    class="sapUiMediumMarginTop"
+                    class="sapUiTinyMarginTop"
                     visible="{= !!${selected>/id}}"
                     press="onDeleteSelectedControl"
                 />
@@ -386,7 +408,6 @@
                                             drop="onDropDialogColumn"
                                         />
                                     </dragDropConfig>
-
                                     <headerToolbar>
                                         <Toolbar>
                                             <Title text="Manage Columns" />
@@ -447,7 +468,6 @@
                                         press="onTriggerCSVImport"
                                     />
                                 </Toolbar>
-
                                 <Table
                                     items="{dialog>/rows}"
                                     mode="Delete"
@@ -463,7 +483,6 @@
                                             drop="onDropDialogRow"
                                         />
                                     </dragDropConfig>
-
                                     <columns>
                                         <Column>
                                             <Text text="Row ID" />
@@ -538,7 +557,6 @@
                                             drop="onDropDialogListItem"
                                         />
                                     </dragDropConfig>
-
                                     <headerToolbar>
                                         <Toolbar>
                                             <Title text="Manage List Items" />
@@ -686,7 +704,7 @@
                             <IconTabFilter
                                 text="Custom Actions"
                                 icon="sap-icon://syntax"
-                                visible="{= ${dialog>/enableCustomActions} }"
+                                visible="{= ${dialog>/enableCustomActions} === true }"
                             >
                                 <Table
                                     items="{dialog>/customActions}"
@@ -766,10 +784,9 @@
                             <IconTabFilter
                                 text="Behavior &amp; Settings"
                                 icon="sap-icon://action-settings"
-                                visible="{= ${dialog>/type} === 'Table' }"
+                                visible="{= ${dialog>/type} === 'Table' || ${dialog>/type} === 'List' || ${dialog>/type} === 'Tree' }"
                             >
-                                <sap.ui.layout.form:SimpleForm
-                                    xmlns:sap.ui.layout.form="sap.ui.layout.form"
+                                <form:SimpleForm
                                     editable="true"
                                     layout="ResponsiveGridLayout"
                                     labelSpanL="7"
@@ -797,24 +814,29 @@
                                         />
                                     </Select>
 
-                                    <Label text="Sort Data By" />
-                                    <Select selectedKey="{dialog>/sortBy}">
-                                        <core:Item
-                                            key="None"
-                                            text="No Sorting"
-                                        />
-                                        <core:Item
-                                            key="col1"
-                                            text="Column 1"
-                                        />
-                                        <core:Item
-                                            key="col2"
-                                            text="Column 2"
-                                        />
-                                        <core:Item
-                                            key="col3"
-                                            text="Column 3"
-                                        />
+                                    <Label 
+                                        text="Sort Data By" 
+                                        visible="{= ${dialog>/type} === 'Table' }" />
+                                    <Select 
+                                        selectedKey="{dialog>/sortBy}" 
+                                        items="{path: 'dialog>/columns', templateShareable: false}"
+                                        visible="{= ${dialog>/type} === 'Table' }"
+                                        forceSelection="false"
+                                        width="100%">
+                                        <core:Item key="{dialog>columnId}" text="{dialog>name}" />
+                                    </Select>
+
+                                    <Label 
+                                        text="Sort Data By" 
+                                        visible="{= ${dialog>/type} === 'List' }" />
+                                    <Select 
+                                        selectedKey="{dialog>/sortBy}" 
+                                        visible="{= ${dialog>/type} === 'List' }"
+                                        forceSelection="false"
+                                        width="100%">
+                                        <core:Item key="None" text="None (Default)" />
+                                        <core:Item key="title" text="Title" />
+                                        <core:Item key="description" text="Description" />
                                     </Select>
 
                                     <Label text="Sort Direction" />
@@ -832,18 +854,17 @@
                                         />
                                     </Select>
 
-                                    <Label text="Enable Inline Editing" />
-                                    <Switch state="{dialog>/inlineEditing}" />
-
                                     <Label
-                                        text="Enable Search Bar (Log Filtering)"
+                                        text="Enable Inline Editing"
+                                        visible="{= ${dialog>/type} === 'Table' }"
                                     />
-                                    <Switch state="{dialog>/enableSearch}" />
+                                    <Switch
+                                        state="{dialog>/inlineEditing}"
+                                        visible="{= ${dialog>/type} === 'Table' }"
+                                    />
 
-                                    <!-- <Label
-                                        text="Enable Action Column (Edit/Delete)"
-                                    />
-                                    <Switch state="{dialog>/enableActions}" /> -->
+                                    <Label text="Enable Search Bar" />
+                                    <Switch state="{dialog>/enableSearch}" />
 
                                     <Label
                                         text="Enable Custom Actions (Write JS)"
@@ -854,21 +875,31 @@
 
                                     <Label
                                         text="Custom Actions Column Name"
-                                        visible="{= ${dialog>/enableCustomActions} }"
+                                        visible="{= ${dialog>/enableCustomActions} === true &amp;&amp; ${dialog>/type} === 'Table' }"
                                     />
                                     <Input
                                         value="{dialog>/customActionsHeader}"
-                                        visible="{= ${dialog>/enableCustomActions} }"
+                                        visible="{= ${dialog>/enableCustomActions} === true &amp;&amp; ${dialog>/type} === 'Table' }"
                                     />
 
-                                    <Label text="Sticky Header" />
-                                    <Switch state="{dialog>/stickyHeader}" />
+                                    <Label
+                                        text="Sticky Header"
+                                        visible="{= ${dialog>/type} === 'Table' }"
+                                    />
+                                    <Switch
+                                        state="{dialog>/stickyHeader}"
+                                        visible="{= ${dialog>/type} === 'Table' }"
+                                    />
 
-                                    <Label text="Alternate Row Colors" />
+                                    <Label
+                                        text="Alternate Row Colors"
+                                        visible="{= ${dialog>/type} === 'Table' }"
+                                    />
                                     <Switch
                                         state="{dialog>/alternateRowColors}"
+                                        visible="{= ${dialog>/type} === 'Table' }"
                                     />
-                                </sap.ui.layout.form:SimpleForm>
+                                </form:SimpleForm>
                             </IconTabFilter>
                         </items>
                     </IconTabBar>
@@ -887,6 +918,7 @@
                     />
                 </endButton>
             </Dialog>
+
             <Dialog
                 id="previewDialog"
                 title="Live Preview"
@@ -979,11 +1011,6 @@
                 </endButton>
             </Dialog>
         </dependents>
-
-        <HBox
-            width="100%"
-            justifyContent="SpaceBetween"
-        />
 
         <footer>
             <OverflowToolbar>

@@ -10,6 +10,7 @@ sap.ui.define([], function () {
                 width: "100%",        
                 height: "auto",   
                 margin: "Tiny",
+                hAlign: "Start",
                 customCssClass: ""
             };
 
@@ -99,8 +100,6 @@ sap.ui.define([], function () {
                         src: "sap-icon://sys-enter-2", 
                         color: "#000000" };
                     break;
-
-                case "Panel":
                 case "Table":
                     oSpecificMetadata = {
                         headerText: "Enterprise Table",
@@ -168,16 +167,28 @@ sap.ui.define([], function () {
                 case "SimpleForm":
                     oSpecificMetadata = { 
                         title: "Simple Form", 
-                        width: "100%", 
-                        editable: true };
+                        width: "100%",
+                        controls: [] 
+                     };
+                    break;
+                case "Panel":
+                    oSpecificMetadata = { 
+                        headerText: "New Panel", 
+                        width: "100%", controls: [] 
+                    };
                     break;
                 case "VBox":
+                    oSpecificMetadata = { 
+                        width: "100%", 
+                        controls: [] 
+                    };
+                    break;
                 case "HBox":
                     oSpecificMetadata = { 
                         width: "100%", 
-                        height: "100px" };
+                        controls: [] 
+                    };
                     break;
-
                 case "Slider":
                     oSpecificMetadata = { 
                         min: 0, 

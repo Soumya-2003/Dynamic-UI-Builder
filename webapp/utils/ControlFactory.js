@@ -7,8 +7,9 @@ sap.ui.define([
     "sap/m/List",
     "sap/m/StandardListItem",
     "sap/m/Tree",
-    "sap/m/StandardTreeItem"
-], function (Table, Column, ColumnListItem, Label, Text, List, StandardListItem, Tree, StandardTreeItem) {
+    "sap/m/StandardTreeItem",
+    "sap/ui/layout/form/SimpleForm"
+], function (Table, Column, ColumnListItem, Label, Text, List, StandardListItem, Tree, StandardTreeItem, SimpleForm) {
     "use strict";
 
     return {
@@ -18,203 +19,274 @@ sap.ui.define([
             switch (oMetadata.type) {
                 case "Table":
                     oControl = new Table({
-                        headerText: oMetadata.headerText,
-                        width: oMetadata.width,
-                        growing: oMetadata.growing,
-                        growingThreshold: oMetadata.growingThreshold,
-                        mode: oMetadata.selectionMode || "None"
+                        width: oMetadata.width || "100%",
+                        mode: oMetadata.selectionMode || "None",
+                        growing: oMetadata.growing === true,
+                        growingThreshold: parseInt(oMetadata.growingThreshold) || 10,
+                        sticky: oMetadata.stickyHeader ? ["ColumnHeaders", "HeaderToolbar"] : [],
+                        alternateRowColors: oMetadata.alternateRowColors === true
                     });
 
+                    var aToolbarContent = [
+                        new sap.m.Title({ text: oMetadata.headerText || "Table" }),
+                        new sap.m.ToolbarSpacer()
+                    ];
+
                     if (oMetadata.enableSearch) {
-                        var oSearchField = new sap.m.SearchField({
-                            placeholder: "Search register...",
-                            width: "300px",
+                        aToolbarContent.push(new sap.m.SearchField({
+                            placeholder: "Search table...",
+                            width: "250px",
                             liveChange: function (oEvent) {
                                 var sQuery = oEvent.getParameter("newValue").toLowerCase();
-                                var aItems = oControl.getItems();
-
-                                aItems.forEach(function (oItem) {
-                                    var bMatch = false;
-                                    oItem.getCells().forEach(function (oCell) {
-                                        var sText = "";
-                                        if (oCell.isA("sap.m.Text") || oCell.isA("sap.m.Label")) sText = oCell.getText();
-                                        else if (oCell.isA("sap.m.Input")) sText = oCell.getValue();
-
-                                        if (sText.toLowerCase().indexOf(sQuery) > -1) {
-                                            bMatch = true;
-                                        }
+                                var oBinding = oControl.getBinding("items");
+                                if (oBinding) {
+                                    var aFilters = oMetadata.columns.map(function(col) {
+                                        return new sap.ui.model.Filter(col.columnId, sap.ui.model.FilterOperator.Contains, sQuery);
                                     });
-                                    oItem.setVisible(bMatch); 
-                                });
+                                    oBinding.filter(new sap.ui.model.Filter({ filters: aFilters, and: false }));
+                                }
                             }
-                        });
-
-                        oControl.setHeaderToolbar(new sap.m.Toolbar({
-                            content: [
-                                new sap.m.Title({ text: oMetadata.headerText || "Table" }),
-                                new sap.m.ToolbarSpacer(),
-                                oSearchField
-                            ]
                         }));
-                    } else {
-                        oControl.setHeaderText(oMetadata.headerText || "Table");
                     }
+
+                    // if (oMetadata.selectionMode === "MultiSelect") {
+                    //     aToolbarContent.push(new sap.m.Button({
+                    //         text: "Delete Selected",
+                    //         icon: "sap-icon://delete",
+                    //         type: "Reject",
+                    //         press: function () {
+                    //             var aSelected = oControl.getSelectedItems();
+                    //             if (aSelected.length === 0) return sap.m.MessageToast.show("Select a row.");
+                    //             aSelected.forEach(function (oItem) { oControl.removeItem(oItem); });
+                    //         }
+                    //     }));
+                    // }
+
+                    if (aToolbarContent.length > 2) oControl.setHeaderToolbar(new sap.m.Toolbar({ content: aToolbarContent }));
+                    else oControl.setHeaderText(oMetadata.headerText || "Table");
 
                     if (oMetadata.columns) {
                         oMetadata.columns.forEach(function (col) {
-                            oControl.addColumn(new Column({
-                                header: new Label({ text: col.name }),
-                                width: col.width || "auto"
-                            }));
+                            oControl.addColumn(new sap.m.Column({ header: new sap.m.Label({ text: col.name }), width: col.width || "auto" }));
                         });
                     }
-
-                    if (oMetadata.enableActions) {
-                        oControl.addColumn(new Column({
-                            header: new Label({ text: "Actions" }),
-                            hAlign: "End",
-                            width: "100px"
-                        }));
-                    }
-
                     if (oMetadata.enableCustomActions && oMetadata.customActions && oMetadata.customActions.length > 0) {
-                        oControl.addColumn(new Column({
-                            header: new Label({ text: oMetadata.customActionsHeader || "Custom Actions" }),
-                            hAlign: "End",
-                            width: "auto"
-                        }));
+                        oControl.addColumn(new sap.m.Column({ header: new sap.m.Label({ text: oMetadata.customActionsHeader || "Actions" }), hAlign: "End", width: "auto" }));
                     }
 
+                    // BINDING ENGINE FOR TABLE
                     var aRowsToRender = oMetadata.rows ? oMetadata.rows.slice() : [];
+                    aRowsToRender.sort(function (a, b) {
+                            var rawA = a[oMetadata.sortBy];
+                            var rawB = b[oMetadata.sortBy];
+                            
+                            if (rawA === undefined || rawA === null) rawA = "";
+                            if (rawB === undefined || rawB === null) rawB = "";
 
-                    if (oMetadata.sortBy && oMetadata.sortBy !== "None") {
-                        aRowsToRender.sort(function (a, b) {
-                            var valA = (a[oMetadata.sortBy] || "").toString().toLowerCase();
-                            var valB = (b[oMetadata.sortBy] || "").toString().toLowerCase();
+                            // Attempt to parse as numbers
+                            var numA = parseFloat(rawA);
+                            var numB = parseFloat(rawB);
 
-                            if (valA < valB) return oMetadata.sortOrder === "Desc" ? 1 : -1;
-                            if (valA > valB) return oMetadata.sortOrder === "Desc" ? -1 : 1;
-                            return 0;
+                            // If BOTH values are valid numbers, do a Mathematical Sort
+                            if (!isNaN(numA) && !isNaN(numB)) {
+                                if (numA < numB) return oMetadata.sortOrder === "Desc" ? 1 : -1;
+                                if (numA > numB) return oMetadata.sortOrder === "Desc" ? -1 : 1;
+                                return 0;
+                            } 
+                            // Otherwise, fallback to Alphabetical String Sort
+                            else {
+                                var strA = rawA.toString().toLowerCase();
+                                var strB = rawB.toString().toLowerCase();
+                                if (strA < strB) return oMetadata.sortOrder === "Desc" ? 1 : -1;
+                                if (strA > strB) return oMetadata.sortOrder === "Desc" ? -1 : 1;
+                                return 0;
+                            }
                         });
-                    }
 
-                    if (aRowsToRender.length > 0) {
-                        aRowsToRender.forEach(function (rowData) {
+                    oControl.setModel(new sap.ui.model.json.JSONModel({ items: aRowsToRender }), "dataModel");
+                    oControl.bindItems({
+                        path: "dataModel>/items",
+                        factory: function(sId, oContext) {
+                            var rowData = oContext.getObject();
                             var aCells = [];
-
                             if (oMetadata.columns) {
-                                oMetadata.columns.forEach(function (col, index) {
-                                    var sKey = "col" + (index + 1);
-                                    if (oMetadata.inlineEditing) {
-                                        aCells.push(new sap.m.Input({ value: rowData[sKey] || "" }));
-                                    } else {
-                                        aCells.push(new sap.m.Text({ text: rowData[sKey] || "" }));
-                                    }
+                                oMetadata.columns.forEach(function (col) {
+                                    aCells.push(oMetadata.inlineEditing ? new sap.m.Input({ value: rowData[col.columnId] || "" }) : new sap.m.Text({ text: rowData[col.columnId] || "" }));
                                 });
                             }
-
-                            if (oMetadata.enableActions) {
-                                var oActionBox = new sap.m.HBox({
-                                    justifyContent: "End",
-                                    items: [
-                                        new sap.m.Button({ icon: "sap-icon://edit", type: "Transparent", tooltip: "Edit Entry" }).addStyleClass("sapUiTinyMarginEnd"),
-                                        new sap.m.Button({ icon: "sap-icon://delete", type: "Transparent", tooltip: "Delete Entry" })
-                                    ]
-                                });
-                                aCells.push(oActionBox);
-                            }
-
                             if (oMetadata.enableCustomActions && oMetadata.customActions && oMetadata.customActions.length > 0) {
-                                var aCustomButtons = oMetadata.customActions.map(function(act) {
+                                var aCustomButtons = oMetadata.customActions.map(function (act) {
                                     return new sap.m.Button({
-                                        text: act.label,
-                                        icon: act.icon,
-                                        type: act.buttonType,
-                                        press: function() {
-                                            try {
-                                                var fnCustomLogic = new Function("rowData", act.logic);
-                                                fnCustomLogic(rowData); 
-                                            } catch (e) {
-                                                sap.m.MessageToast.show("Custom Logic Error: " + e.message);
-                                                console.error("Logic Error:", e);
-                                            }
-                                        }
+                                        text: act.label, icon: act.icon, type: act.buttonType,
+                                        press: function () { eval(act.logic); }
                                     }).addStyleClass("sapUiTinyMarginEnd");
                                 });
-
-                                var oCustomActionBox = new sap.m.HBox({
-                                    justifyContent: "End",
-                                    items: aCustomButtons
-                                });
-                                
-                                aCells.push(oCustomActionBox);
+                                aCells.push(new sap.m.HBox({ justifyContent: "End", items: aCustomButtons }));
                             }
-
-                            oControl.addItem(new ColumnListItem({
-                                cells: aCells,
-                                highlight: rowData.status || "None"
-                            }));
-                        });
-                    }
+                            var oListItem = new sap.m.ColumnListItem({ cells: aCells });
+                            if (rowData.status && rowData.status !== "None") oListItem.setHighlight(rowData.status);
+                            return oListItem;
+                        }
+                    });
                     break;
 
                 case "List":
-                    oControl = new List({
-                        headerText: oMetadata.headerText,
-                        width: oMetadata.width,
-                        growing: oMetadata.growing,
-                        mode: oMetadata.selectionMode || "None"
+                    oControl = new sap.m.List({
+                        width: "100%",
+                        mode: oMetadata.selectionMode || "None",
+                        growing: oMetadata.growing === true,
+                        growingThreshold: parseInt(oMetadata.growingThreshold) || 10,
+                        sticky: oMetadata.stickyHeader ? ["HeaderToolbar"] : []
                     });
 
-                    if (oMetadata.items) {
-                        oMetadata.items.forEach(function (itemData) {
 
-                            var sInfoState = itemData.status && itemData.status !== "None" ? itemData.status : "None";
-                            var sInfoText = itemData.status && itemData.status !== "None" ? itemData.status : "";
+                    var aListToolbar = [
+                        new sap.m.Title({ text: oMetadata.headerText || "List" }),
+                        new sap.m.ToolbarSpacer()
+                    ];
 
-                            oControl.addItem(new StandardListItem({
-                                title: itemData.title,
-                                description: itemData.description,
-                                icon: itemData.icon || "sap-icon://task",
-                                info: sInfoText,
-                                infoState: sInfoState
-                            }));
+                    if (oMetadata.enableSearch || oMetadata.showSearch) {
+                        aListToolbar.push(new sap.m.SearchField({
+                            placeholder: "Search list...",
+                            width: "250px",
+                            liveChange: function (oEvent) {
+                                var sQuery = oEvent.getParameter("newValue");
+                                var oBinding = oControl.getBinding("items");
+                                
+                                if (oBinding) {
+                                    // Search across both Title and Description
+                                    var oFilterTitle = new sap.ui.model.Filter({ path: "title", operator: sap.ui.model.FilterOperator.Contains, value1: sQuery, caseSensitive: false });
+                                    var oFilterDesc = new sap.ui.model.Filter({ path: "description", operator: sap.ui.model.FilterOperator.Contains, value1: sQuery, caseSensitive: false });
+                                    
+                                    oBinding.filter(new sap.ui.model.Filter({ filters: [oFilterTitle, oFilterDesc], and: false }));
+                                }
+                            }
+                        }));
+                    }
+
+                    if (aListToolbar.length > 2) {
+                        oControl.setHeaderToolbar(new sap.m.Toolbar({ content: aListToolbar }));
+                    } else {
+                        oControl.setHeaderText(oMetadata.headerText || "List");
+                    }
+
+                    var aItemsToRender = oMetadata.items ? oMetadata.items.slice() : [];
+                    
+                    if (oMetadata.sortBy && oMetadata.sortBy !== "None") {
+                        aItemsToRender.sort(function (a, b) {
+                            var rawA = a[oMetadata.sortBy];
+                            var rawB = b[oMetadata.sortBy];
+                            
+                            if (rawA === undefined || rawA === null) rawA = "";
+                            if (rawB === undefined || rawB === null) rawB = "";
+
+                            // Attempt to parse as numbers
+                            var numA = parseFloat(rawA);
+                            var numB = parseFloat(rawB);
+
+                            // If BOTH values are valid numbers, do a Mathematical Sort
+                            if (!isNaN(numA) && !isNaN(numB)) {
+                                if (numA < numB) return oMetadata.sortOrder === "Desc" ? 1 : -1;
+                                if (numA > numB) return oMetadata.sortOrder === "Desc" ? -1 : 1;
+                                return 0;
+                            } 
+                            // Otherwise, fallback to Alphabetical String Sort
+                            else {
+                                var strA = rawA.toString().toLowerCase();
+                                var strB = rawB.toString().toLowerCase();
+                                if (strA < strB) return oMetadata.sortOrder === "Desc" ? 1 : -1;
+                                if (strA > strB) return oMetadata.sortOrder === "Desc" ? -1 : 1;
+                                return 0;
+                            }
                         });
                     }
+
+                    oControl.setModel(new sap.ui.model.json.JSONModel({ items: aItemsToRender }), "dataModel");
+                    oControl.bindItems({
+                        path: "dataModel>/items",
+                        factory: function(sId, oContext) {
+                            var rowData = oContext.getObject();
+                            if (oMetadata.enableCustomActions && oMetadata.customActions && oMetadata.customActions.length > 0) {
+                                var aActionButtons = oMetadata.customActions.map(function(act) {
+                                    return new sap.m.Button({ icon: act.icon, text: act.label, type: act.buttonType, press: function() { eval(act.logic); } }).addStyleClass("sapUiTinyMarginBegin");
+                                });
+                                var oCustomContent = new sap.m.HBox({
+                                    justifyContent: "SpaceBetween", alignItems: "Center", width: "100%",
+                                    items: [
+                                        new sap.m.HBox({ alignItems: "Center", items: [ new sap.ui.core.Icon({ src: rowData.icon, size: "1.5rem" }).addStyleClass("sapUiSmallMarginEnd"), new sap.m.VBox({ items: [ new sap.m.Title({ text: rowData.title }), new sap.m.Text({ text: rowData.description }) ] }) ] }).addStyleClass("sapUiSmallMargin"),
+                                        new sap.m.HBox({ items: aActionButtons }).addStyleClass("sapUiSmallMarginEnd")
+                                    ]
+                                });
+                                var oCustomListItem = new sap.m.CustomListItem({ content: [oCustomContent] });
+                                if (rowData.status && rowData.status !== "None") oCustomListItem.setHighlight(rowData.status);
+                                return oCustomListItem;
+                            } else {
+                                var oStandardItem = new sap.m.StandardListItem({ title: rowData.title, description: rowData.description, icon: rowData.icon });
+                                if (rowData.status && rowData.status !== "None") oStandardItem.setHighlight(rowData.status);
+                                return oStandardItem;
+                            }
+                        }
+                    });
                     break;
 
                 case "Tree":
-                    oControl = new Tree({
-                        headerText: oMetadata.headerText || "Hierarchical Tree",
-                        width: oMetadata.width || "100%",
+                    oControl = new sap.m.Tree({
+                        width: "100%",
                         mode: oMetadata.selectionMode || "None"
                     });
 
-                    if (oMetadata.flatNodes && oMetadata.flatNodes.length > 0) {
-                        var aNestedNodes = [];
-                        var oMap = {};
-
-                        oMetadata.flatNodes.forEach(function (node) {
-                            oMap[node.nodeId] = { text: node.text, nodes: [] };
+                    // TREE ALGORITHM FIX: Convert Flat JSON to Nested JSON for SAP Model Binding!
+                    var aFlatNodes = oMetadata.flatNodes || [];
+                    var buildNested = function(parentId) {
+                        return aFlatNodes.filter(function(n) { return (n.parentId || "") === (parentId || ""); }).map(function(n) {
+                            var oNode = Object.assign({}, n);
+                            oNode.children = buildNested(n.nodeId);
+                            return oNode;
                         });
+                    };
 
-                        oMetadata.flatNodes.forEach(function (node) {
-                            if (node.parentId && oMap[node.parentId]) {
-                                oMap[node.parentId].nodes.push(oMap[node.nodeId]);
+                    // BINDING ENGINE FOR TREE
+                    oControl.setModel(new sap.ui.model.json.JSONModel({ nodes: buildNested("") }), "dataModel");
+                    oControl.bindItems({
+                        path: "dataModel>/nodes",
+                        parameters: { arrayNames: ["children"] },
+                        factory: function(sId, oContext) {
+                            var rowData = oContext.getObject();
+                            if (oMetadata.enableCustomActions && oMetadata.customActions && oMetadata.customActions.length > 0) {
+                                var aActionButtons = oMetadata.customActions.map(function(act) {
+                                    return new sap.m.Button({ icon: act.icon, type: act.buttonType, press: function() { eval(act.logic); } }).addStyleClass("sapUiTinyMarginBegin");
+                                });
+                                var oCustomTreeContent = new sap.m.HBox({
+                                    justifyContent: "SpaceBetween", alignItems: "Center", width: "100%",
+                                    items: [ new sap.m.Text({ text: rowData.text }), new sap.m.HBox({ items: aActionButtons }) ]
+                                });
+                                return new sap.m.CustomTreeItem({ content: [oCustomTreeContent] });
                             } else {
-                                aNestedNodes.push(oMap[node.nodeId]);
+                                return new sap.m.StandardTreeItem({ title: rowData.text });
                             }
-                        });
+                        }
+                    });
+                    break;
 
-                        var oTreeModel = new sap.ui.model.json.JSONModel({ rootNodes: aNestedNodes });
-                        oControl.setModel(oTreeModel, "treeData");
-
-                        oControl.bindItems({
-                            path: "treeData>/rootNodes",
-                            template: new sap.m.StandardTreeItem({ title: "{treeData>text}" }),
-                            parameters: { arrayNames: ["nodes"] }
-                        });
-                    }
+                case "Panel":
+                    oControl = new sap.m.Panel({
+                        headerText: oMetadata.headerText || "Panel",
+                        expandable: true,
+                        expanded: true
+                    });
+                    break;
+                case "VBox":
+                    oControl = new sap.m.VBox();
+                    break;
+                case "HBox":
+                    oControl = new sap.m.HBox();
+                    break;
+                case "SimpleForm":
+                    oControl = new SimpleForm({
+                        title: oMetadata.headerText || "Form",
+                        layout: "ResponsiveGridLayout",
+                        editable: true
+                    });
                     break;
 
                 case "Button": oControl = new sap.m.Button(); break;
@@ -236,7 +308,7 @@ sap.ui.define([
             if (oControl) {
                 var aIgnoredKeys = [
                     "id", "type", "ui5Id",
-                    "columns", "rows", "items", "nodes", "flatNodes", "customActions", 
+                    "columns", "rows", "items", "nodes", "flatNodes", "customActions",
                     "stickyHeader", "alternateRowColors", "selectionMode", "inlineEditing",
                     "enableSearch", "enableActions", "enableCustomActions", "customActionsHeader", "sortBy", "sortOrder"
                 ];
