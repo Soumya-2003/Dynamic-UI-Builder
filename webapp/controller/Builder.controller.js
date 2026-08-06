@@ -53,6 +53,14 @@ sap.ui.define([
             };
         },
 
+        onAddItem: function () {
+           PropertyManager.onAddItem(this);
+        },
+
+        onDeleteItem: function (oEvent) {
+            PropertyManager.onDeleteItem(oEvent, this);
+        },
+
         _findArrayAndIndex: function (aNodes, sId) {
             return TreeUtil.findArrayAndIndex(aNodes, sId);
         },
