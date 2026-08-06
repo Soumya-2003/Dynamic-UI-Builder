@@ -8,8 +8,36 @@ sap.ui.define([
     "sap/m/StandardListItem",
     "sap/m/Tree",
     "sap/m/StandardTreeItem",
-    "sap/ui/layout/form/SimpleForm"
-], function (Table, Column, ColumnListItem, Label, Text, List, StandardListItem, Tree, StandardTreeItem, SimpleForm) {
+    "sap/ui/layout/form/SimpleForm",
+    "sap/ui/core/Item",
+    "sap/m/MenuItem",
+    "sap/m/Menu",
+    "sap/m/SegmentedButtonItem",
+    "sap/m/ComboBox",
+    "sap/m/MultiComboBox",
+    "sap/m/Select",
+    "sap/m/SegmentedButton",
+    "sap/m/MenuButton"
+], function (Table, 
+             Column, 
+             ColumnListItem, 
+             Label, 
+             Text, 
+             List, 
+             StandardListItem, 
+             Tree, 
+             StandardTreeItem, 
+             SimpleForm,
+             Item,
+             MenuItem,
+             Menu,
+             SegmentedButtonItem,
+             ComboBox,
+             MultiComboBox,
+             Select,
+             SegmentedButton,
+             MenuButton
+        ) {
     "use strict";
 
     return {
@@ -74,7 +102,6 @@ sap.ui.define([
                         oControl.addColumn(new sap.m.Column({ header: new sap.m.Label({ text: oMetadata.customActionsHeader || "Actions" }), hAlign: "End", width: "auto" }));
                     }
 
-                    // BINDING ENGINE FOR TABLE
                     var aRowsToRender = oMetadata.rows ? oMetadata.rows.slice() : [];
                     aRowsToRender.sort(function (a, b) {
                             var rawA = a[oMetadata.sortBy];
@@ -83,7 +110,6 @@ sap.ui.define([
                             if (rawA === undefined || rawA === null) rawA = "";
                             if (rawB === undefined || rawB === null) rawB = "";
 
-                            // Attempt to parse as numbers
                             var numA = parseFloat(rawA);
                             var numB = parseFloat(rawB);
 
@@ -93,7 +119,7 @@ sap.ui.define([
                                 if (numA > numB) return oMetadata.sortOrder === "Desc" ? -1 : 1;
                                 return 0;
                             } 
-                            // Otherwise, fallback to Alphabetical String Sort
+                            // Otherwise Alphabetical String Sort
                             else {
                                 var strA = rawA.toString().toLowerCase();
                                 var strB = rawB.toString().toLowerCase();
@@ -180,7 +206,6 @@ sap.ui.define([
                             if (rawA === undefined || rawA === null) rawA = "";
                             if (rawB === undefined || rawB === null) rawB = "";
 
-                            // Attempt to parse as numbers
                             var numA = parseFloat(rawA);
                             var numB = parseFloat(rawB);
 
@@ -190,7 +215,7 @@ sap.ui.define([
                                 if (numA > numB) return oMetadata.sortOrder === "Desc" ? -1 : 1;
                                 return 0;
                             } 
-                            // Otherwise, fallback to Alphabetical String Sort
+                            // Otherwise Alphabetical String Sort
                             else {
                                 var strA = rawA.toString().toLowerCase();
                                 var strB = rawB.toString().toLowerCase();
@@ -235,7 +260,6 @@ sap.ui.define([
                         mode: oMetadata.selectionMode || "None"
                     });
 
-                    // TREE ALGORITHM FIX: Convert Flat JSON to Nested JSON for SAP Model Binding!
                     var aFlatNodes = oMetadata.flatNodes || [];
                     var buildNested = function(parentId) {
                         return aFlatNodes.filter(function(n) { return (n.parentId || "") === (parentId || ""); }).map(function(n) {
@@ -245,7 +269,6 @@ sap.ui.define([
                         });
                     };
 
-                    // BINDING ENGINE FOR TREE
                     oControl.setModel(new sap.ui.model.json.JSONModel({ nodes: buildNested("") }), "dataModel");
                     oControl.bindItems({
                         path: "dataModel>/nodes",
@@ -291,14 +314,53 @@ sap.ui.define([
 
                 case "Button": oControl = new sap.m.Button(); break;
                 case "Input": oControl = new sap.m.Input(); break;
+                case "SearchField": oControl = new sap.m.SearchField(); break;
                 case "CheckBox": oControl = new sap.m.CheckBox(); break;
+                case "RadioButton": oControl = new sap.m.RadioButton(); break;
                 case "Label": oControl = new sap.m.Label(); break;
                 case "TextArea": oControl = new sap.m.TextArea(); break;
-                case "ComboBox": oControl = new sap.m.ComboBox(); break;
+                case "ComboBox": 
+                case "MultiComboBox":
+                case "Select":
+                    var ControlClass = (oMetadata.type === "ComboBox") ? ComboBox : (oMetadata.type === "MultiComboBox") ? MultiComboBox : Select;
+                    oControl = new ControlClass();
+                    
+                    var aDropdownItems = oMetadata.items || [];
+                    aDropdownItems.forEach(function(item) {
+                        oControl.addItem(new Item({ text: item.text, key: item.key }));
+                    });
+                    break;
                 case "DatePicker": oControl = new sap.m.DatePicker(); break;
+                case "TimePicker": oControl = new sap.m.TimePicker(); break;
+                case "DateTimePicker": oControl = new sap.m.DateTimePicker(); break;
                 case "Switch": oControl = new sap.m.Switch(); break;
                 case "Slider": oControl = new sap.m.Slider(); break;
                 case "Progress Indicator": oControl = new sap.m.ProgressIndicator(); break;
+
+                case "Segmented Button":
+                    oControl = new SegmentedButton();
+                    var aSegItems = oMetadata.items || [];
+                    aSegItems.forEach(function(item) {
+                        oControl.addItem(new SegmentedButtonItem({ text: item.text, key: item.key }));
+                    });
+                    break;
+
+                case "Menu Button":
+                    var aMenuItems = oMetadata.items || [];
+                    var aMenuControlItems = aMenuItems.map(function(item) {
+                        // Render icon if the user types sap-icon:// into the key field
+                        var sIcon = (item.key && item.key.indexOf("sap-icon://") === 0) ? item.key : "";
+                        return new MenuItem({ text: item.text, icon: sIcon });
+                    });
+                    
+                    var oMenu = new Menu({ items: aMenuControlItems });
+                    oControl = new MenuButton({ text: oMetadata.text || "Actions", menu: oMenu });
+                    break;
+                case "Link": oControl = new sap.m.Link(); break;
+                case "Avatar": oControl = new sap.m.Avatar(); break;
+                case "Icon": oControl = new sap.ui.core.Icon(); break;
+                case "Object Status": oControl = new sap.m.ObjectStatus(); break;
+                case "Object Identifier": oControl = new sap.m.ObjectIdentifier(); break;
 
                 default:
                     oControl = new sap.m.Text({ text: oMetadata.type || "Control" });
