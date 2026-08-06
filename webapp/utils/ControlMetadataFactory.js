@@ -19,13 +19,26 @@ sap.ui.define([], function () {
             switch (sControlName) {
                 case "Input":
                 case "SearchField":
-                case "ComboBox":
-                case "MultiComboBox":
                     oSpecificMetadata = { 
                         placeholder: "Enter value", 
                         width: "100%", 
                         editable: true, 
-                        enabled: true };
+                        enabled: true 
+                    };
+                    break;
+                case "ComboBox":
+                case "MultiComboBox":
+                case "Select":
+                    oSpecificMetadata = { 
+                        placeholder: "Select an option", 
+                        width: "100%", 
+                        editable: true, 
+                        enabled: true,
+                        items: [
+                            { text: "Option A", key: "A" },
+                            { text: "Option B", key: "B" }
+                        ]
+                    };
                     break;
                 case "TextArea":
                     oSpecificMetadata = { 
@@ -50,12 +63,22 @@ sap.ui.define([], function () {
                     oSpecificMetadata = { 
                         text: sControlName, 
                         width: "100%", 
-                        enabled: true };
+                        enabled: true,
+                        items: [
+                            { text: "Edit", key: "edit" },
+                            { text: "Delete", key: "delete" }
+                        ]
+                    };
                     break;
                 case "Segmented Button":
                     oSpecificMetadata = { 
                         selectedKey: "", 
-                        enabled: true };
+                        enabled: true,
+                        items: [
+                            { text: "List View", key: "list" },
+                            { text: "Map View", key: "map" }
+                        ]
+                    };
                     break;
 
                 case "CheckBox":
@@ -70,13 +93,6 @@ sap.ui.define([], function () {
                         state: false, 
                         enabled: true };
                     break;
-                case "Select":
-                    oSpecificMetadata = { 
-                        selectedKey: "", 
-                        width: "100%", 
-                        enabled: true };
-                    break;
-
                 case "Label":
                 case "Text":
                     oSpecificMetadata = { 
