@@ -347,6 +347,25 @@
                         id="propertiesContainer"
                         width="100%"
                     />
+                    <VBox class="sapUiSmallMarginTop" 
+                          visible="{= ${selected>/type} === 'ComboBox' || 
+                                       ${selected>/type} === 'MultiComboBox' || 
+                                       ${selected>/type} === 'Select' || 
+                                       ${selected>/type} === 'Segmented Button' || 
+                                       ${selected>/type} === 'Menu Button' }">
+                        
+                        <Title text="Manage Options/Items" level="H4" class="sapUiTinyMarginBottom" />
+                        
+                        <List items="{selected>/items}" mode="Delete" delete=".onDeleteItem" noDataText="No items added yet.">
+                            <StandardListItem title="{selected>text}" description="Key: {selected>key}" />
+                        </List>
+
+                        <HBox alignItems="Center" class="sapUiTinyMarginTop">
+                            <Input id="newItemText" placeholder="Text (e.g. 'Laptop')" width="45%" class="sapUiTinyMarginEnd" />
+                            <Input id="newItemKey" placeholder="Key (e.g. 'LAP')" width="40%" class="sapUiTinyMarginEnd" />
+                            <Button icon="sap-icon://add" type="Emphasized" press=".onAddItem" width="15%" />
+                        </HBox>
+                    </VBox>
                 </ScrollContainer>
 
                 <Button
@@ -814,29 +833,45 @@
                                         />
                                     </Select>
 
-                                    <Label 
-                                        text="Sort Data By" 
-                                        visible="{= ${dialog>/type} === 'Table' }" />
-                                    <Select 
-                                        selectedKey="{dialog>/sortBy}" 
+                                    <Label
+                                        text="Sort Data By"
+                                        visible="{= ${dialog>/type} === 'Table' }"
+                                    />
+                                    <Select
+                                        selectedKey="{dialog>/sortBy}"
                                         items="{path: 'dialog>/columns', templateShareable: false}"
                                         visible="{= ${dialog>/type} === 'Table' }"
                                         forceSelection="false"
-                                        width="100%">
-                                        <core:Item key="{dialog>columnId}" text="{dialog>name}" />
+                                        width="100%"
+                                    >
+                                        <core:Item
+                                            key="{dialog>columnId}"
+                                            text="{dialog>name}"
+                                        />
                                     </Select>
 
-                                    <Label 
-                                        text="Sort Data By" 
-                                        visible="{= ${dialog>/type} === 'List' }" />
-                                    <Select 
-                                        selectedKey="{dialog>/sortBy}" 
+                                    <Label
+                                        text="Sort Data By"
+                                        visible="{= ${dialog>/type} === 'List' }"
+                                    />
+                                    <Select
+                                        selectedKey="{dialog>/sortBy}"
                                         visible="{= ${dialog>/type} === 'List' }"
                                         forceSelection="false"
-                                        width="100%">
-                                        <core:Item key="None" text="None (Default)" />
-                                        <core:Item key="title" text="Title" />
-                                        <core:Item key="description" text="Description" />
+                                        width="100%"
+                                    >
+                                        <core:Item
+                                            key="None"
+                                            text="None (Default)"
+                                        />
+                                        <core:Item
+                                            key="title"
+                                            text="Title"
+                                        />
+                                        <core:Item
+                                            key="description"
+                                            text="Description"
+                                        />
                                     </Select>
 
                                     <Label text="Sort Direction" />
